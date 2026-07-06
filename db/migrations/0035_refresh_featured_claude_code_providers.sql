@@ -31,6 +31,7 @@ set
 from provider_updates u
 where c.owner_type = 'platform'
   and c.deleted_at is null
+  and coalesce(c.data_origin, '') in ('demo', 'test')
   and lower(replace(c.name, ' ', '')) = u.name_key;
 
 update recommend_picks rp
@@ -42,4 +43,5 @@ from channels c
 where rp.channel_id = c.id
   and c.owner_type = 'platform'
   and c.deleted_at is null
+  and coalesce(rp.data_origin, '') in ('demo', 'test')
   and lower(replace(c.name, ' ', '')) in ('aigocode', 'packycode', 'pipellm');

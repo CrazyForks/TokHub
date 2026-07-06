@@ -1,5 +1,3 @@
-delete from recommend_picks;
-
 with targets as (
   select *
   from (
@@ -90,4 +88,11 @@ select
   now(),
   'runtime'
 from matched
-order by position;
+where not exists (
+  select 1
+  from recommend_picks rp
+  where rp.id = 'rcp_featured_' || matched.target_key
+     or rp.position = matched.position
+)
+order by position
+on conflict do nothing;

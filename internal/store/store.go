@@ -142,6 +142,57 @@ type SeedConfig struct {
 	SeedMode         string
 }
 
+const seedAdminUserSQL = `
+	with inserted as (
+		insert into users(id,email,username,password_hash,name,avatar,status,role,plan,email_verified_at,data_origin)
+		values($1,$2,$3,$4,$5,$6,'active','owner','super_vip',now(),'system')
+		on conflict(email) do nothing
+		returning id
+	)
+	select id from inserted
+	union all
+	select id from users
+	where email=$2
+	  and not exists(select 1 from inserted)
+	limit 1
+`
+
+const seedDefaultOrgSQL = `
+	insert into orgs(id,name,slug,plan,status,timezone,data_origin)
+	values('org_default','TokHub','tokhub','enterprise','active','Asia/Shanghai','system')
+	on conflict(id) do nothing
+`
+
+const seedDefaultOrgMembershipSQL = `
+	insert into org_members(org_id,user_id,role,group_name,status)
+	values('org_default',$1,'owner','平台管理','active')
+	on conflict(org_id,user_id) do nothing
+`
+
+const seedDemoChannelSQL = `
+	insert into channels(id,owner_type,owner_id,name,provider,type,model,upstream_model,endpoint,status,score,probe_daily,probes_used_today,created_at,data_origin)
+	values($1,'platform',null,$2,$3,'openai-compatible',$4,$4,$5,$6,$7,1000,0,now(),$8)
+	on conflict(id) do nothing
+`
+
+const seedNotificationChannelSQL = `
+	insert into notification_channels(id,org_id,scope,name,type,target,target_ciphertext,target_nonce,target_mask,target_fingerprint,enabled,data_origin)
+	values($1,'','admin',$2,$3,$4,'','','','',true,$5)
+	on conflict(id) do nothing
+`
+
+const ensureSiteConfigSQL = `
+	insert into site_configs(key,value_json,updated_by,updated_at)
+	values('site',$1,$2,now())
+	on conflict(key) do nothing
+`
+
+const setSiteConfigSQL = `
+	insert into site_configs(key,value_json,updated_by,updated_at)
+	values('site',$1,$2,now())
+	on conflict(key) do update set value_json=excluded.value_json, updated_by=excluded.updated_by, updated_at=now()
+`
+
 func (u User) Public() PublicUser {
 	return PublicUser{
 		ID:            u.ID,
@@ -258,26 +309,14 @@ func Seed(ctx context.Context, db *pgxpool.Pool, cfg SeedConfig, logger *slog.Lo
 	}
 	passwordHash := string(passwordHashBytes)
 	adminID := "usr_" + uuid.NewString()
-	err = db.QueryRow(ctx, `
-		insert into users(id,email,username,password_hash,name,avatar,status,role,plan,email_verified_at,data_origin)
-		values($1,$2,$3,$4,$5,$6,'active','owner','super_vip',now(),'system')
-		on conflict(email) do update set
-			username=excluded.username,
-			name=excluded.name,
-			avatar=excluded.avatar,
-			status='active',
-			role='owner',
-			plan='super_vip',
-			data_origin='system'
-		returning id
-	`, adminID, strings.ToLower(cfg.AdminEmail), normalizeUsernameOrEmpty(cfg.AdminUsername), passwordHash, "TokHub Admin", "TA").Scan(&adminID)
+	err = db.QueryRow(ctx, seedAdminUserSQL, adminID, strings.ToLower(cfg.AdminEmail), normalizeUsernameOrEmpty(cfg.AdminUsername), passwordHash, "TokHub Admin", "TA").Scan(&adminID)
 	if err != nil {
 		return err
 	}
 	if err := seedDefaultOrg(ctx, db, adminID); err != nil {
 		return err
 	}
-	if err := repo.SetSiteConfig(ctx, DefaultSiteConfig(cfg.PublicURL, cfg.RegistrationOpen)); err != nil {
+	if err := repo.EnsureSiteConfig(ctx, DefaultSiteConfig(cfg.PublicURL, cfg.RegistrationOpen)); err != nil {
 		return err
 	}
 	if err := seedModels(ctx, db); err != nil {
@@ -311,18 +350,10 @@ func normalizeSeedMode(mode string) string {
 }
 
 func seedDefaultOrg(ctx context.Context, db *pgxpool.Pool, adminID string) error {
-	if _, err := db.Exec(ctx, `
-		insert into orgs(id,name,slug,plan,status,timezone,data_origin)
-		values('org_default','TokHub','tokhub','enterprise','active','Asia/Shanghai','system')
-		on conflict(id) do update set name=excluded.name, slug=excluded.slug, plan=excluded.plan, status=excluded.status, data_origin='system'
-	`); err != nil {
+	if _, err := db.Exec(ctx, seedDefaultOrgSQL); err != nil {
 		return err
 	}
-	_, err := db.Exec(ctx, `
-		insert into org_members(org_id,user_id,role,group_name,status)
-		values('org_default',$1,'owner','平台管理','active')
-		on conflict(org_id,user_id) do update set role=excluded.role, group_name=excluded.group_name, status=excluded.status
-	`, adminID)
+	_, err := db.Exec(ctx, seedDefaultOrgMembershipSQL, adminID)
 	return err
 }
 
@@ -356,11 +387,7 @@ func seedChannels(ctx context.Context, db *pgxpool.Pool, seedMode string) error 
 		{"ch_lt_local", "Local Trial", "OpenAI", "gpt-4o-mini", "https://local-trial.example/v1", 80, "healthy"},
 	}
 	for _, ch := range channels {
-		if _, err := db.Exec(ctx, `
-			insert into channels(id,owner_type,owner_id,name,provider,type,model,upstream_model,endpoint,status,score,probe_daily,probes_used_today,created_at,data_origin)
-			values($1,'platform',null,$2,$3,'openai-compatible',$4,$4,$5,$6,$7,1000,0,now(),$8)
-			on conflict(id) do update set name=excluded.name, provider=excluded.provider, model=excluded.model, endpoint=excluded.endpoint, status=excluded.status, score=excluded.score, data_origin=excluded.data_origin
-		`, ch.ID, ch.Name, ch.Provider, ch.Model, ch.Endpoint, ch.Status, ch.Score, dataOrigin); err != nil {
+		if _, err := db.Exec(ctx, seedDemoChannelSQL, ch.ID, ch.Name, ch.Provider, ch.Model, ch.Endpoint, ch.Status, ch.Score, dataOrigin); err != nil {
 			return err
 		}
 	}
@@ -414,20 +441,7 @@ func seedNotificationChannels(ctx context.Context, db *pgxpool.Pool, seedMode st
 		{"ntc_admin_webhook", "平台 Webhook Mock", "webhook", "https://webhook.example/tokhub"},
 	}
 	for _, ch := range channels {
-		if _, err := db.Exec(ctx, `
-			insert into notification_channels(id,org_id,scope,name,type,target,target_ciphertext,target_nonce,target_mask,target_fingerprint,enabled,data_origin)
-			values($1,'','admin',$2,$3,$4,'','','','',true,$5)
-			on conflict(id) do update set
-				name=excluded.name,
-				type=excluded.type,
-				target=excluded.target,
-				target_ciphertext='',
-				target_nonce='',
-				target_mask='',
-				target_fingerprint='',
-				enabled=excluded.enabled,
-				data_origin=excluded.data_origin
-		`, ch.ID, ch.Name, ch.Type, ch.Target, dataOrigin); err != nil {
+		if _, err := db.Exec(ctx, seedNotificationChannelSQL, ch.ID, ch.Name, ch.Type, ch.Target, dataOrigin); err != nil {
 			return err
 		}
 	}
@@ -561,17 +575,23 @@ func (r *Repository) SetSiteConfig(ctx context.Context, cfg SiteConfig) error {
 	return r.SetSiteConfigBy(ctx, cfg, "")
 }
 
+func (r *Repository) EnsureSiteConfig(ctx context.Context, cfg SiteConfig) error {
+	cfg = normalizeSiteConfig(cfg)
+	raw, err := json.Marshal(cfg)
+	if err != nil {
+		return err
+	}
+	_, err = r.db.Exec(ctx, ensureSiteConfigSQL, raw, nullableText(""))
+	return err
+}
+
 func (r *Repository) SetSiteConfigBy(ctx context.Context, cfg SiteConfig, actorID string) error {
 	cfg = normalizeSiteConfig(cfg)
 	raw, err := json.Marshal(cfg)
 	if err != nil {
 		return err
 	}
-	_, err = r.db.Exec(ctx, `
-		insert into site_configs(key,value_json,updated_by,updated_at)
-		values('site',$1,$2,now())
-		on conflict(key) do update set value_json=excluded.value_json, updated_by=excluded.updated_by, updated_at=now()
-	`, raw, nullableText(actorID))
+	_, err = r.db.Exec(ctx, setSiteConfigSQL, raw, nullableText(actorID))
 	return err
 }
 

@@ -132,7 +132,9 @@ check_page "/console"
 
 check_get "public overview empty" "/api/public/overview" '"total":0'
 check_get "public channels empty" "/api/public/channels?page=1&pageSize=5" '"items":\[\]'
-check_get "public recommend empty" "/api/public/recommend" '"picks":\[\]'
+check_get "public recommend default AIGoCode" "/api/public/recommend" '"title":"AIGoCode"'
+check_get "public recommend default Pipellm" "/api/public/recommend" '"title":"Pipellm"'
+check_get "public recommend default PackyCode" "/api/public/recommend" '"title":"PackyCode"'
 check_get "public recommend rewards empty" "/api/public/recommend" '"rewards":\[\]'
 check_get "public recommend scenarios empty" "/api/public/recommend" '"scenarios":\[\]'
 check_get_absent "public recommend no test rank labels" "/api/public/recommend" '"label":"[^"]*((CRUD|UI) Rank Rule|phase|load|test|mock|e2e|pilot|smoke)'

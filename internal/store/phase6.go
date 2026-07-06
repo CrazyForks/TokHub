@@ -291,11 +291,18 @@ func seedRecommend(ctx context.Context, db DBTX, seedMode string) error {
 }
 
 func (r *Repository) RecommendConfig(ctx context.Context) (RecommendConfig, error) {
+	return r.recommendConfig(ctx, true)
+}
+
+func (r *Repository) recommendConfig(ctx context.Context, includeFallbackDefaults bool) (RecommendConfig, error) {
 	picks, err := r.recommendPicks(ctx, true)
 	if err != nil {
 		return RecommendConfig{}, err
 	}
 	picks = visibleRecommendPicks(picks)
+	if includeFallbackDefaults && len(picks) == 0 {
+		picks = defaultFeaturedRecommendPicks()
+	}
 	rewards, err := r.recommendRewards(ctx, true)
 	if err != nil {
 		return RecommendConfig{}, err
@@ -317,7 +324,7 @@ func (r *Repository) RecommendConfig(ctx context.Context) (RecommendConfig, erro
 }
 
 func (r *Repository) RecommendAdminData(ctx context.Context) (RecommendAdminData, error) {
-	cfg, err := r.RecommendConfig(ctx)
+	cfg, err := r.recommendConfig(ctx, false)
 	if err != nil {
 		return RecommendAdminData{}, err
 	}
@@ -766,6 +773,97 @@ func publicWebsiteHost(hostname string) string {
 		out = out[1:]
 	}
 	return strings.Join(out, ".")
+}
+
+func defaultFeaturedRecommendPicks() []RecommendPick {
+	items := []struct {
+		key         string
+		name        string
+		provider    string
+		endpoint    string
+		officialURL string
+		score       int
+		ribbon      string
+		summary     string
+		points      []string
+	}{
+		{
+			key:         "aigocode",
+			name:        "AIGoCode",
+			provider:    "AIGoCode",
+			endpoint:    "https://api.aigocode.app",
+			officialURL: "https://aigocode.com/invite/AP5KFJWJ",
+			score:       42,
+			ribbon:      "AI 编程推荐",
+			summary:     "AIGoCode 适合 AI 编程与团队协作场景，已纳入 TokHub 精选推荐。",
+			points: []string{
+				"适合 AI 编程与团队协作场景",
+				"AIGoCode · claude-sonnet-4-6",
+				"推荐入口保留在精选推荐模块，不作为默认平台通道展示",
+			},
+		},
+		{
+			key:         "pipellm",
+			name:        "Pipellm",
+			provider:    "Pipellm",
+			endpoint:    "https://cc-api.pipellm.ai",
+			officialURL: "https://code.pipellm.ai/login?ref=vbsdxpv8",
+			score:       99,
+			ribbon:      "Agent 基础设施",
+			summary:     "PipeLLM 适合 Agent 与模型网关基础设施场景，已纳入 TokHub 精选推荐。",
+			points: []string{
+				"适合 Agent 与模型网关基础设施场景",
+				"Pipellm · claude-sonnet-4-6",
+				"推荐入口保留在精选推荐模块，不作为默认平台通道展示",
+			},
+		},
+		{
+			key:         "packycode",
+			name:        "PackyCode",
+			provider:    "PackyCode",
+			endpoint:    "https://www.packyapi.com",
+			officialURL: "https://www.packyapi.com/register?aff=lqD6",
+			score:       70,
+			ribbon:      "编辑首推",
+			summary:     "PackyCode 适合 Claude Code 与研发场景，已纳入 TokHub 精选推荐。",
+			points: []string{
+				"适合 Claude Code 与研发场景",
+				"PackyCode · claude-sonnet-4-6",
+				"推荐入口保留在精选推荐模块，不作为默认平台通道展示",
+			},
+		},
+	}
+	out := make([]RecommendPick, 0, len(items))
+	for index, item := range items {
+		channel := PublicChannel{
+			Name:            item.name,
+			Provider:        item.provider,
+			Type:            "anthropic",
+			Model:           "claude-sonnet-4-6",
+			UpstreamModel:   "claude-sonnet-4-6",
+			Endpoint:        item.endpoint,
+			OfficialSiteURL: item.officialURL,
+			Status:          "unknown",
+			StatusLabel:     "推荐入口",
+			Score:           item.score,
+			Mark:            providerMark(item.provider),
+			Trend:           singlePointTrend(item.score),
+		}
+		out = append(out, RecommendPick{
+			ID:        "rcp_default_" + item.key,
+			ChannelID: "",
+			Position:  index + 1,
+			Title:     item.name,
+			Ribbon:    item.ribbon,
+			Summary:   item.summary,
+			Points:    append([]string{}, item.points...),
+			CTALabel:  defaultRecommendCTALabel,
+			CTAURL:    item.officialURL,
+			Enabled:   true,
+			Channel:   channel,
+		})
+	}
+	return out
 }
 
 func (r *Repository) TrackRecommendClick(ctx context.Context, itemType string, itemID string, channelID string, userID string, ip string, ua string) error {

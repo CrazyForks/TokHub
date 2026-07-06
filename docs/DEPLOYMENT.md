@@ -97,7 +97,7 @@ curl http://localhost:8080/readyz
 
 首次部署仍可使用 `docker compose up -d --build`。后续更新推荐显式先跑 `migrate`，避免应用进程先于数据库结构或内置运营数据启动。
 
-精选推荐的 AIGoCode、Pipellm、PackyCode 三条信息已随数据库迁移同步为 `runtime` 数据，包括公开通道元数据、推荐位、排序、文案和官网 CTA。线上服务器 `git pull` 后执行迁移即可得到这三条推荐；演示数据清理和无演示数据检查不会把它们当作 demo/test 推荐过滤。
+精选推荐的 AIGoCode、Pipellm、PackyCode 三条信息作为应用内推荐兜底内容保留在首页和精选推荐页；fresh 生产部署不会把它们自动插入「平台通道」，因此公开通道列表默认仍为空。部署方后续可以在后台手动添加自己的平台通道和推荐配置。
 
 ## 分 role Compose
 
