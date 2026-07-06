@@ -181,10 +181,10 @@ docker compose up -d --build
 - OpenAPI：`http://localhost:8080/openapi.yaml`
 - Metrics：`http://localhost:8080/metrics`
 - Gateway：`http://localhost:8080/gateway/v1/*`
-- 本地开发管理员账号：`admin@tokhub.local`
+- 本地开发管理员账号：`admin`
 - 本地开发默认密码：`admin@tokhub.local`
 
-默认账号和密码只用于本地开发。生产环境必须在 `.env.production` 中替换 `TOKHUB_ADMIN_PASSWORD` 和 `TOKHUB_SECRET_KEY`。
+上述账号和密码也是默认后台管理入口的登录账号和登录密码，只用于本地开发。生产环境必须在 `.env.production` 中替换 `TOKHUB_ADMIN_PASSWORD` 和 `TOKHUB_SECRET_KEY`。
 
 服务启动后的轻量冒烟：
 

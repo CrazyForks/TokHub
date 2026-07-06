@@ -183,10 +183,10 @@ Default endpoints:
 - OpenAPI: `http://localhost:8080/openapi.yaml`
 - Metrics: `http://localhost:8080/metrics`
 - Gateway: `http://localhost:8080/gateway/v1/*`
-- Local admin email: `admin@tokhub.local`
+- Local admin username: `admin`
 - Local admin password: `admin@tokhub.local`
 
-The default credentials are for local development only. Production deployments must replace `TOKHUB_ADMIN_PASSWORD` and `TOKHUB_SECRET_KEY` in `.env.production`.
+These are also the default Platform Admin login credentials for local development only. Production deployments must replace `TOKHUB_ADMIN_PASSWORD` and `TOKHUB_SECRET_KEY` in `.env.production`.
 
 Smoke test after startup:
 
