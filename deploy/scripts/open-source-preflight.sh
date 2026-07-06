@@ -80,7 +80,7 @@ rg -n -I --hidden \
   --glob '!skills/**' \
   --glob '!prototype/**' \
   --glob '!deploy/scripts/open-source-preflight.sh' \
-  'TokHub@[0-9A-Za-z!]+|Phase121TrialAdminPassword|admin@tokhub\.run|user@tokhub\.run|/Users/laoyao|/tmp/tokhub|192\.168\.|核心API资料|BEGIN (RSA|OPENSSH|PRIVATE) KEY' \
+  'TokHub@[0-9A-Za-z!]+|Phase121TrialAdminPassword|(admin|user)@tokhub\.run|/Users/laoyao|/tmp/tokhub|192\.168\.|核心API资料|BEGIN (RSA|OPENSSH|PRIVATE) KEY' \
   . > "$scan_file" || true
 
 while IFS= read -r match; do
