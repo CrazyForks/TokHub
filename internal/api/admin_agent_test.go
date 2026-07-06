@@ -121,3 +121,25 @@ func TestAdminAgentSatisfiesInteractivePasswordGate(t *testing.T) {
 		t.Fatal("expected admin-agent context to satisfy interactive password gate")
 	}
 }
+
+func TestAdminAgentChannelExportSkipsPasswordBody(t *testing.T) {
+	authn := store.AuthenticatedAdminAgent{
+		Token: store.AdminAgentToken{ID: "aat_test", Name: "codex-admin"},
+		User:  store.PublicUser{ID: "usr_owner", Email: "owner@example.com", Role: "owner", Status: "active"},
+	}
+	request := httptest.NewRequest(http.MethodPost, "/api/admin/channels/export", nil)
+	request.ContentLength = -1
+	request = withAdminAgent(request, authn, "export production channel catalog", "export-channels-20260706")
+
+	if adminChannelExportNeedsPasswordBody(request) {
+		t.Fatal("expected admin-agent export to ignore password body regardless of ContentLength")
+	}
+}
+
+func TestBrowserChannelExportRequiresPasswordBody(t *testing.T) {
+	request := httptest.NewRequest(http.MethodPost, "/api/admin/channels/export", nil)
+
+	if !adminChannelExportNeedsPasswordBody(request) {
+		t.Fatal("expected browser export to require password body")
+	}
+}

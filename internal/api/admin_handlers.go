@@ -225,8 +225,7 @@ func (s *Server) adminChannels(w http.ResponseWriter, r *http.Request) {
 func (s *Server) exportAdminChannels(w http.ResponseWriter, r *http.Request) {
 	user, _ := s.userFromRequest(r)
 	var req adminPasswordRequest
-	_, isAgent := adminAgentFromContext(r.Context())
-	if !isAgent || r.ContentLength != 0 {
+	if adminChannelExportNeedsPasswordBody(r) {
 		if err := decodeJSON(r, &req); err != nil {
 			writeError(w, r, http.StatusBadRequest, "invalid_json", "Invalid JSON body")
 			return
@@ -270,6 +269,11 @@ func (s *Server) exportAdminChannels(w http.ResponseWriter, r *http.Request) {
 		_ = writer.Write(row)
 	}
 	writer.Flush()
+}
+
+func adminChannelExportNeedsPasswordBody(r *http.Request) bool {
+	_, isAgent := adminAgentFromContext(r.Context())
+	return !isAgent
 }
 
 func (s *Server) importAdminChannels(w http.ResponseWriter, r *http.Request) {

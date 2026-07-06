@@ -86,7 +86,7 @@ curl -X POST "$TOKHUB_BASE_URL/api/admin/channels/ch_123/validate" \
 
 下载 channel site 包需要 `admin:read`、`admin:dangerous`、`admin:secrets`、`admin:export`，并需要 reason/idempotency key。
 
-平台通道 CSV 导入/导出和通道 API 同步都可能处理 provider key 明文。浏览器管理员仍必须输入当前登录密码完成二次验证；admin-agent Bearer token 可调用 `/api/admin/channels/export`、`/api/admin/channels/import` 和 `/api/admin/channels/sync`，但必须具备对应 `admin:secrets`、`admin:dangerous`、`admin:export` 等 scope，并提供 reason 与 idempotency key。导出文件和同步源 Site Key 必须按密钥材料保管。
+平台通道 CSV 导入/导出和通道 API 同步都可能处理 provider key 明文。浏览器管理员仍必须输入当前登录密码完成二次验证；admin-agent Bearer token 可调用 `/api/admin/channels/export`、`/api/admin/channels/import` 和 `/api/admin/channels/sync`。导出接口需要 `admin:read`、`admin:write`、`admin:secrets`、`admin:export`；导入和同步接口需要 `admin:write`、`admin:dangerous`、`admin:secrets`；三者都必须提供 reason 与 idempotency key。导出文件和同步源 Site Key 必须按密钥材料保管。
 
 ## 回滚
 
