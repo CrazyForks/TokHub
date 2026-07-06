@@ -1,4 +1,5 @@
 import type { NavItem } from "./api";
+import { adminPath } from "./adminPath";
 
 export const defaultPrimaryPublicLinks: NavItem[] = [
   { label: "首页", href: "/" },
@@ -10,7 +11,7 @@ export const defaultPrimaryPublicLinks: NavItem[] = [
 export const defaultFooterPublicLinks: NavItem[] = [
   ...defaultPrimaryPublicLinks,
   { label: "控制台", href: "/console" },
-  { label: "平台管理", href: "/admin" }
+  { label: "平台管理", href: adminPath() }
 ];
 
 export function normalizeLegacyPublicLinks(items: NavItem[]) {
@@ -23,6 +24,9 @@ export function normalizeLegacyPublicLinks(items: NavItem[]) {
   let hasPricing = false;
 
   out.forEach((item, index) => {
+    if (item.href === "/admin" || item.href.startsWith("/admin/")) {
+      item.href = adminPath(item.href.slice("/admin".length));
+    }
     if (item.href === "/") {
       if (homeIndex < 0) homeIndex = index;
       if (isLegacyMonitorHomeLabel(item.label)) {

@@ -1,5 +1,6 @@
 import { FormEvent, useEffect, useState } from "react";
 import { forgotPassword, login, register, resetPassword, siteConfig, verifyEmail } from "../lib/api";
+import { adminPath, isLegacyAdminPath } from "../lib/adminPath";
 
 type AuthTab = "login" | "reg";
 
@@ -335,7 +336,7 @@ function safeNextPath(rawNext: string | null) {
   }
   try {
     const next = new URL(rawNext, window.location.origin);
-    if (next.origin !== window.location.origin || next.pathname === "/login" || next.pathname === "/admin/login" || isNonPageNextPath(next.pathname)) {
+    if (next.origin !== window.location.origin || next.pathname === "/login" || next.pathname === adminPath("/login") || (isLegacyAdminPath(next.pathname) && next.pathname.endsWith("/login")) || isNonPageNextPath(next.pathname)) {
       return fallback;
     }
     return `${next.pathname}${next.search}${next.hash}`;

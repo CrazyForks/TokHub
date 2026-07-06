@@ -2,6 +2,7 @@ import { ReactNode, useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { AdminSettingsSummary, adminSettings, cachedCurrentUser, currentUser, logout, User } from "../lib/api";
+import { adminLoginPath, adminPath } from "../lib/adminPath";
 import { groupedNavModules, type ModuleConfig } from "../modules/registry";
 import { Footer } from "./Footer";
 
@@ -33,7 +34,7 @@ export function AdminShell({ children, title = "控制台首页", crumb = "/ 概
         if (!active) return;
         setUser(value);
         if (!value) {
-          window.location.href = `/admin/login?next=${encodeURIComponent(nextPath)}`;
+          window.location.href = adminLoginPath(nextPath);
           return;
         }
         if (!isPlatformRole(value)) {
@@ -52,7 +53,7 @@ export function AdminShell({ children, title = "控制台首页", crumb = "/ 概
       } catch {
         if (!active) return;
         setUser(null);
-        window.location.href = `/admin/login?next=${encodeURIComponent(nextPath)}`;
+        window.location.href = adminLoginPath(nextPath);
       } finally {
         if (active) setLoaded(true);
       }
@@ -67,7 +68,7 @@ export function AdminShell({ children, title = "控制台首页", crumb = "/ 概
   async function handleLogout() {
     adminSummaryCache = null;
     await logout();
-    window.location.href = "/admin/login";
+    window.location.href = adminPath("/login");
   }
 
   if (!loaded || !user || !isPlatformRole(user)) {
@@ -89,7 +90,7 @@ export function AdminShell({ children, title = "控制台首页", crumb = "/ 概
   const groups = groupedNavModules("admin");
   const platformOrgName = summary?.platformOrg?.name || "平台组织";
   const platformOrgMark = firstMark(platformOrgName);
-  const platformOrgHref = `/admin/orgs${summary?.platformOrg?.slug ? `?q=${encodeURIComponent(summary.platformOrg.slug)}` : ""}`;
+  const platformOrgHref = adminPath(`/orgs${summary?.platformOrg?.slug ? `?q=${encodeURIComponent(summary.platformOrg.slug)}` : ""}`);
 
   return (
     <div className="admin">
@@ -106,7 +107,7 @@ export function AdminShell({ children, title = "控制台首页", crumb = "/ 概
             <div className="sb-group" key={group.groupKey}>
               <div className="sb-title">{t(group.groupKey)}</div>
               {group.modules.map((module) => {
-                const active = location.pathname === module.path || (module.path !== "/admin" && location.pathname.startsWith(`${module.path}/`));
+                const active = location.pathname === module.path || (module.path !== adminPath() && location.pathname.startsWith(`${module.path}/`));
                 return (
                   <Link className={`sb-link ${active ? "active" : ""}`} to={module.path} key={module.id}>
                     <span className="i">{module.icon}</span>

@@ -15,6 +15,7 @@ import {
   revokeOtherSessions,
   updateAdminSettings
 } from "../lib/api";
+import { adminPath, getAdminPath, normalizeAdminPath, setAdminPath, validateAdminPathInput } from "../lib/adminPath";
 
 type SettingsTab = "org" | "monitor" | "bill" | "sec" | "intg";
 
@@ -89,10 +90,12 @@ export function AdminSettingsPage() {
     setError("");
     setNotice("");
     try {
+      const previousAdminPath = getAdminPath();
       const payload = await updateAdminSettings({
         registrationOpen: draft.registrationOpen,
         showRegisterCta: draft.showRegisterCta,
         emailVerificationRequired: draft.emailVerificationRequired,
+        adminPath: normalizeAdminPath(draft.adminPath),
         brandName: draft.brandName,
         logoMark: draft.logoMark,
         subtitle: draft.subtitle,
@@ -103,7 +106,12 @@ export function AdminSettingsPage() {
       });
       setSite(payload.site);
       setDraft(payload.site);
-      setNotice("设置已保存。注册入口、登录页和前台 CTA 会同步更新。");
+      setAdminPath(payload.site.adminPath);
+      if (previousAdminPath !== getAdminPath()) {
+        window.location.href = adminPath("/settings");
+        return;
+      }
+      setNotice("设置已保存。后台入口、注册入口、登录页和前台 CTA 会同步更新。");
     } catch (err) {
       setError(err instanceof Error ? err.message : "保存设置失败");
     } finally {
@@ -146,7 +154,7 @@ export function AdminSettingsPage() {
   }
 
   const platformOrg = summary?.platformOrg;
-  const platformOrgLink = `/admin/orgs${platformOrg?.slug ? `?q=${encodeURIComponent(platformOrg.slug)}` : ""}`;
+  const platformOrgLink = adminPath(`/orgs${platformOrg?.slug ? `?q=${encodeURIComponent(platformOrg.slug)}` : ""}`);
 
   return (
     <AdminShell title="系统设置" crumb="/ 系统">
@@ -184,7 +192,7 @@ export function AdminSettingsPage() {
               <div className="lbl"><b>平台组织状态</b><small>套餐、状态和时区来自组织管理，不再使用设置页硬编码</small></div>
               <div className="ctl">
                 <span className="keyval">{platformOrg?.plan ?? "-"} / {platformOrg?.status ?? "-"} / {platformOrg?.timezone ?? "-"}</span>
-                <a className="btn btn-ghost btn-sm" href="/admin/orgs">进入组织管理</a>
+                <a className="btn btn-ghost btn-sm" href={adminPath("/orgs")}>进入组织管理</a>
               </div>
             </div>
             <div className="set-row">
@@ -224,6 +232,20 @@ export function AdminSettingsPage() {
           <div className="card set-card">
             <div className="set-h">⛬ 平台访问与注册</div>
             <div className="set-row">
+              <div className="lbl"><b>后台管理员地址</b><small>管理端页面前缀，建议使用不易猜测但便于团队记忆的站内路径；API 地址仍保持 /api/admin</small></div>
+              <div className="ctl">
+                <input
+                  className="input mono"
+                  style={{ maxWidth: 260 }}
+                  aria-label="后台管理员地址"
+                  value={draft.adminPath || "/admin"}
+                  onChange={(event) => setDraft({ ...draft, adminPath: event.target.value })}
+                  placeholder="/admin"
+                />
+                <span className="reg-switch-hint">保存后入口为 {normalizeAdminPath(draft.adminPath || "/admin")}</span>
+              </div>
+            </div>
+            <div className="set-row">
               <div className="lbl"><b>开放公共注册</b><small>允许访客在登录页注册账号、订阅平台通道、添加自己的私有通道。关闭后前台仅显示只读监控信息</small></div>
               <div className="ctl">
                 <button
@@ -251,11 +273,11 @@ export function AdminSettingsPage() {
             </div>
             <div className="set-row">
               <div className="lbl"><b>注册用户管理</b><small>新增、编辑、禁用、批量治理用户在用户管理页面完成</small></div>
-              <div className="ctl"><a className="btn btn-ghost btn-sm" href="/admin/users">进入用户管理</a></div>
+              <div className="ctl"><a className="btn btn-ghost btn-sm" href={adminPath("/users")}>进入用户管理</a></div>
             </div>
             <div className="set-row">
               <div className="lbl"><b>私有通道总数</b><small>所有注册用户添加的私有通道汇总</small></div>
-              <div className="ctl"><span className="keyval"><b>{summary?.privateChannels ?? 0}</b> 个</span><a className="btn btn-ghost btn-sm" href="/admin/channels">去通道接入查看</a></div>
+              <div className="ctl"><span className="keyval"><b>{summary?.privateChannels ?? 0}</b> 个</span><a className="btn btn-ghost btn-sm" href={adminPath("/channels")}>去通道接入查看</a></div>
             </div>
             <div className="set-row">
               <div className="lbl"><b>注册需邮箱验证</b><small>默认关闭。开启前需要先配置 SMTP/邮件服务，否则新用户会被阻塞在验证步骤</small></div>
@@ -456,10 +478,10 @@ function BillingSettings({ summary }: { summary: AdminSettingsSummary | null }) 
       </div>
       <div className="card set-card">
         <div className="set-h">套餐与计费治理</div>
-        <ActionRow title="用量与成本报表" help="按网关、模型、通道、成员筛选真实 usage，支持 CSV 导出和 rollup 重算。" href="/admin/usage" action="查看用量" />
-        <ActionRow title="网关额度与策略" help="创建、编辑、暂停、删除平台网关，管理 QPS、月度额度和上游集合。" href="/admin/gateways" action="管理网关" />
-        <ActionRow title="成员 Key 与限额" help="签发、编辑、吊销 Gateway Key，按成员和网关控制调用额度。" href="/admin/members" action="管理 Key" />
-        <ActionRow title="成本告警" help="配置成本阈值、网关错误率和恢复通知，避免用量异常无人处理。" href="/admin/alerts" action="配置告警" />
+        <ActionRow title="用量与成本报表" help="按网关、模型、通道、成员筛选真实 usage，支持 CSV 导出和 rollup 重算。" href={adminPath("/usage")} action="查看用量" />
+        <ActionRow title="网关额度与策略" help="创建、编辑、暂停、删除平台网关，管理 QPS、月度额度和上游集合。" href={adminPath("/gateways")} action="管理网关" />
+        <ActionRow title="成员 Key 与限额" help="签发、编辑、吊销 Gateway Key，按成员和网关控制调用额度。" href={adminPath("/members")} action="管理 Key" />
+        <ActionRow title="成本告警" help="配置成本阈值、网关错误率和恢复通知，避免用量异常无人处理。" href={adminPath("/alerts")} action="配置告警" />
       </div>
     </div>
   );
@@ -491,7 +513,7 @@ function SecuritySettings({
       </div>
       <div className="card set-card">
         <div className="set-h">安全策略治理</div>
-        <ActionRow title="账号与会话治理" help="新增、禁用、删除用户会撤销 active session；Owner 和当前操作者有保护。" href="/admin/users" action="管理用户" />
+        <ActionRow title="账号与会话治理" help="新增、禁用、删除用户会撤销 active session；Owner 和当前操作者有保护。" href={adminPath("/users")} action="管理用户" />
         <div className="set-row">
           <div className="lbl"><b>当前账号其他会话</b><small>撤销当前账号在其他浏览器或设备上的会话，当前浏览器保持登录。</small></div>
           <div className="ctl">
@@ -500,9 +522,9 @@ function SecuritySettings({
             </button>
           </div>
         </div>
-        <ActionRow title="审计查询与导出" help="按操作人、对象、时间和结果筛选审计记录，CSV 导出不包含敏感 metadata。" href="/admin/audit" action="查看审计" />
-        <ActionRow title="注册入口与邮箱验证" help="开放公共注册、显示注册入口和品牌文案仍在组织页签保存。" href="/admin/settings" action="回到组织页签" />
-        <ActionRow title="生产数据健康检查" help="检查 demo/test 数据、真实通知渠道、真实运营配置和发布闸门状态。" href="/admin" action="查看总览" />
+        <ActionRow title="审计查询与导出" help="按操作人、对象、时间和结果筛选审计记录，CSV 导出不包含敏感 metadata。" href={adminPath("/audit")} action="查看审计" />
+        <ActionRow title="注册入口与邮箱验证" help="开放公共注册、显示注册入口和品牌文案仍在组织页签保存。" href={adminPath("/settings")} action="回到组织页签" />
+        <ActionRow title="生产数据健康检查" help="检查 demo/test 数据、真实通知渠道、真实运营配置和发布闸门状态。" href={adminPath()} action="查看总览" />
       </div>
       {viewer?.role === "owner" ? <AdminAgentTokenManager /> : null}
     </div>
@@ -520,10 +542,10 @@ function IntegrationSettings({ summary }: { summary: AdminSettingsSummary | null
       </div>
       <div className="card set-card">
         <div className="set-h">集成与通知治理</div>
-        <ActionRow title="通知渠道" help="新增、编辑、测试、启停、删除 email/webhook/飞书通知渠道，支持批量治理。" href="/admin/alerts" action="管理通知" />
-        <ActionRow title="Open API 授权站点" help="创建 Site Key、限定 scope/QPS、暂停或吊销第三方只读状态接口。" href="/admin/open-api" action="管理授权" />
-        <ActionRow title="前台站点集成" help="维护公开导航、页脚链接、品牌和注册 CTA，保存后公开页面实时读取。" href="/admin/web" action="管理网站" />
-        <ActionRow title="平台通道集成" help="维护平台供应商通道、真实凭据、探测开关和网关准入状态。" href="/admin/channels" action="管理通道" />
+        <ActionRow title="通知渠道" help="新增、编辑、测试、启停、删除 email/webhook/飞书通知渠道，支持批量治理。" href={adminPath("/alerts")} action="管理通知" />
+        <ActionRow title="Open API 授权站点" help="创建 Site Key、限定 scope/QPS、暂停或吊销第三方只读状态接口。" href={adminPath("/open-api")} action="管理授权" />
+        <ActionRow title="前台站点集成" help="维护公开导航、页脚链接、品牌和注册 CTA，保存后公开页面实时读取。" href={adminPath("/web")} action="管理网站" />
+        <ActionRow title="平台通道集成" help="维护平台供应商通道、真实凭据、探测开关和网关准入状态。" href={adminPath("/channels")} action="管理通道" />
       </div>
     </div>
   );
@@ -738,6 +760,8 @@ function validateSettingsDraft(site: SiteConfig) {
   if (Array.from(site.logoMark.trim()).length < 1 || Array.from(site.logoMark.trim()).length > 2) return "Logo 标记必须是 1-2 个字符。";
   if (site.subtitle.length > 80) return "品牌副标题不能超过 80 个字符。";
   if (site.footerText.length > 120) return "版权声明不能超过 120 个字符。";
+  const adminPathError = validateAdminPathInput(site.adminPath || "/admin");
+  if (adminPathError) return adminPathError;
   if (!["latency", "success", "cost"].includes(site.defaultGatewayPolicy)) return "默认路由策略不合法。";
   if (!site.timezone.trim() || /\s/.test(site.timezone) || site.timezone.length > 64) return "时区格式不合法。";
   const monitorModels = site.monitorModels ?? [];

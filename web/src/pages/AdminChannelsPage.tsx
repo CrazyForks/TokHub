@@ -25,6 +25,7 @@ import {
   updateAdminChannel,
   validateAdminChannel
 } from "../lib/api";
+import { adminPath } from "../lib/adminPath";
 import { ActionBar, BulkActionBar, Button, DataTable, DataTableColumn, Dialog, FilterBar, PageHeader, SelectField, StatGrid } from "../ui";
 
 const statusClass: Record<string, string> = {
@@ -656,9 +657,14 @@ export function AdminChannelsPage() {
           </div>
         </div>
       ),
-      meta: { width: "38%" }
+      meta: { width: "36%" }
     },
-    { id: "owner", header: "归属用户", cell: ({ row }) => <span title={row.original.ownerEmail}>{row.original.ownerEmail}</span>, meta: { width: "24%", truncate: true } },
+    {
+      id: "owner",
+      header: "归属用户",
+      cell: ({ row }) => <span className="private-owner-cell" title={row.original.ownerEmail}>{row.original.ownerEmail}</span>,
+      meta: { width: "23%", className: "private-owner-column" }
+    },
     {
       id: "status",
       header: "状态 / 模型",
@@ -671,7 +677,7 @@ export function AdminChannelsPage() {
           <small className="private-model" title={row.original.model}>{row.original.model}</small>
         </div>
       ),
-      meta: { width: "20%" }
+      meta: { width: "23%", className: "private-status-model-column" }
     },
     {
       id: "probe",
@@ -682,7 +688,7 @@ export function AdminChannelsPage() {
           <small>最后 {timeLabel(row.original.lastProbeAt)}</small>
         </div>
       ),
-      meta: { width: "12%" }
+      meta: { width: "12%", className: "private-probe-column" }
     },
     { id: "readonly", header: "操作", cell: () => <span className="muted-time">只读</span>, meta: { width: "6%", align: "end" } }
   ];
@@ -1349,7 +1355,7 @@ function ChannelSyncDialog({
             onChange={(event) => setPassword(event.target.value)}
           />
         </div>
-        <div className="hint">源站 Site Key 需要在 /admin/open-api 勾选 channel_sync scope。同步会覆盖同 id 的平台通道并写入本地审计。</div>
+        <div className="hint">源站 Site Key 需要在 {adminPath("/open-api")} 勾选 channel_sync scope。同步会覆盖同 id 的平台通道并写入本地审计。</div>
       </form>
       {results.length ? (
         <div className="channel-import-results">

@@ -11,6 +11,7 @@ import {
   RecommendScenario,
   saveAdminRecommend
 } from "../lib/api";
+import { adminPath } from "../lib/adminPath";
 
 type Tab = "picks" | "ranks" | "rewards" | "scenarios";
 
@@ -230,7 +231,7 @@ function PickEditor({ draft, setDraft }: { draft: RecommendAdminData; setDraft: 
         <div className="set-h">
           <span>★ 本周编辑首推 · TOP 3</span>
           {draft.channels.length && draft.picks.length < maxRecommendPicks ? (
-            <Link className="btn btn-ghost btn-sm" to="/admin/recommend/new">＋ 添加推荐位</Link>
+            <Link className="btn btn-ghost btn-sm" to={adminPath("/recommend/new")}>＋ 添加推荐位</Link>
           ) : (
             <button className="btn btn-ghost btn-sm" disabled>＋ 添加推荐位</button>
           )}

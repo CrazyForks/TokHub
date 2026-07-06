@@ -385,6 +385,7 @@ export type SiteConfig = {
   registrationOpen: boolean;
   showRegisterCta: boolean;
   emailVerificationRequired: boolean;
+  adminPath: string;
   brandName: string;
   logoMark: string;
   subtitle: string;

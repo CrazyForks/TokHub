@@ -153,6 +153,7 @@ func (s *Server) resetAdminWebConfig(w http.ResponseWriter, r *http.Request) {
 	}
 	cfg := store.DefaultSiteConfig(current.PublicURL, current.RegistrationOpen)
 	cfg.EmailVerificationRequired = current.EmailVerificationRequired
+	cfg.AdminPath = current.AdminPath
 	cfg.DefaultGatewayPolicy = current.DefaultGatewayPolicy
 	cfg.Timezone = current.Timezone
 	cfg.MonitorModels = current.MonitorModels
@@ -178,6 +179,7 @@ func cleanSiteConfigInput(cfg store.SiteConfig) (store.SiteConfig, string) {
 	cfg.LogoMark = strings.TrimSpace(cfg.LogoMark)
 	cfg.Subtitle = strings.TrimSpace(cfg.Subtitle)
 	cfg.FooterText = strings.TrimSpace(cfg.FooterText)
+	cfg.AdminPath = store.NormalizeAdminPath(cfg.AdminPath)
 	cfg.DefaultGatewayPolicy = strings.TrimSpace(cfg.DefaultGatewayPolicy)
 	cfg.Timezone = strings.TrimSpace(cfg.Timezone)
 	if cfg.BrandName == "" {
@@ -191,6 +193,9 @@ func cleanSiteConfigInput(cfg store.SiteConfig) (store.SiteConfig, string) {
 	}
 	if len([]rune(cfg.Subtitle)) > 80 {
 		return cfg, "副标题不能超过 80 个字符"
+	}
+	if errText := validateAdminPath(cfg.AdminPath); errText != "" {
+		return cfg, errText
 	}
 	switch cfg.DefaultGatewayPolicy {
 	case "", "latency", "success", "cost":
@@ -222,6 +227,39 @@ func cleanSiteConfigInput(cfg store.SiteConfig) (store.SiteConfig, string) {
 	cfg.FooterLinks = footerLinks
 	cfg.MonitorModels = monitorModels
 	return cfg, ""
+}
+
+func validateAdminPath(path string) string {
+	if path == "" {
+		return "后台管理员地址不能为空"
+	}
+	if path == "/" || !strings.HasPrefix(path, "/") || strings.HasPrefix(path, "//") || strings.HasPrefix(path, "\\") {
+		return "后台管理员地址必须是以 / 开头的站内路径"
+	}
+	if len(path) > 64 {
+		return "后台管理员地址不能超过 64 个字符"
+	}
+	if strings.Contains(path, "//") || strings.ContainsAny(path, " \t\r\n?#\\") {
+		return "后台管理员地址格式不合法"
+	}
+	for _, r := range path {
+		if (r >= 'a' && r <= 'z') || (r >= 'A' && r <= 'Z') || (r >= '0' && r <= '9') || r == '/' || r == '-' || r == '_' || r == '.' || r == '~' {
+			continue
+		}
+		return "后台管理员地址只能包含英文、数字、/、-、_、.、~"
+	}
+	reserved := []string{
+		"/api", "/v1", "/gateway", "/site", "/ws", "/metrics", "/healthz", "/readyz",
+		"/login", "/console", "/channels", "/dashboard", "/pricing", "/recommend",
+		"/assets", "/icons", "/manifest.webmanifest", "/sw.js", "/favicon.ico",
+		"/openapi.yaml", "/docs", "/robots.txt", "/sitemap.xml", "/llms.txt",
+	}
+	for _, prefix := range reserved {
+		if path == prefix || strings.HasPrefix(path, prefix+"/") {
+			return "后台管理员地址不能占用系统路径 " + prefix
+		}
+	}
+	return ""
 }
 
 func cleanMonitorModels(items []store.MonitorModelConfig) ([]store.MonitorModelConfig, string) {

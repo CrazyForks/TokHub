@@ -82,6 +82,7 @@ type SiteConfig struct {
 	RegistrationOpen          bool                 `json:"registrationOpen"`
 	ShowRegisterCTA           bool                 `json:"showRegisterCta"`
 	EmailVerificationRequired bool                 `json:"emailVerificationRequired"`
+	AdminPath                 string               `json:"adminPath"`
 	BrandName                 string               `json:"brandName"`
 	LogoMark                  string               `json:"logoMark"`
 	Subtitle                  string               `json:"subtitle"`
@@ -117,6 +118,7 @@ func DefaultSiteConfig(publicURL string, registrationOpen bool) SiteConfig {
 		RegistrationOpen:          registrationOpen,
 		ShowRegisterCTA:           registrationOpen,
 		EmailVerificationRequired: false,
+		AdminPath:                 "/admin",
 		BrandName:                 "TokHub",
 		LogoMark:                  "T",
 		Subtitle:                  "API 中转站监控",
@@ -579,6 +581,7 @@ func normalizeSiteConfig(cfg SiteConfig) SiteConfig {
 	if cfg.LogoMark == "" {
 		cfg.LogoMark = "T"
 	}
+	cfg.AdminPath = NormalizeAdminPath(cfg.AdminPath)
 	cfg.DefaultGatewayPolicy = normalizeGatewayPolicy(cfg.DefaultGatewayPolicy)
 	cfg.Timezone = strings.TrimSpace(cfg.Timezone)
 	if cfg.Timezone == "" {
@@ -594,11 +597,41 @@ func normalizeSiteConfig(cfg SiteConfig) SiteConfig {
 	} else {
 		cfg.FooterLinks = normalizePublicLinks(cfg.FooterLinks)
 	}
+	cfg.FooterLinks = normalizeAdminLink(cfg.FooterLinks, cfg.AdminPath)
 	cfg.MonitorModels = normalizeMonitorModels(cfg.MonitorModels)
 	if !cfg.RegistrationOpen {
 		cfg.ShowRegisterCTA = false
 	}
 	return cfg
+}
+
+func NormalizeAdminPath(value string) string {
+	value = strings.TrimSpace(value)
+	if value == "" {
+		return "/admin"
+	}
+	if len(value) > 1 {
+		trimmed := strings.TrimRight(value, "/")
+		if trimmed != "" {
+			value = trimmed
+		}
+	}
+	if value == "" {
+		return "/admin"
+	}
+	return value
+}
+
+func normalizeAdminLink(items []NavItem, adminPath string) []NavItem {
+	for i := range items {
+		switch {
+		case items[i].Href == "/admin":
+			items[i].Href = adminPath
+		case strings.HasPrefix(items[i].Href, "/admin/"):
+			items[i].Href = adminPath + strings.TrimPrefix(items[i].Href, "/admin")
+		}
+	}
+	return items
 }
 
 func DefaultMonitorModels() []MonitorModelConfig {

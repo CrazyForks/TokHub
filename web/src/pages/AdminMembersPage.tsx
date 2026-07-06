@@ -35,6 +35,7 @@ import {
   workspaceCanManage,
   workspaceCanOperate
 } from "../lib/api";
+import { adminPath } from "../lib/adminPath";
 import { BulkActionBar, DataTable, DataTableColumn, Dialog, FilterBar, FormField, SelectField, StatGrid } from "../ui";
 
 type Tab = "members" | "users" | "keys";
@@ -503,7 +504,7 @@ export function AdminMembersPage({ scope = "console" }: { scope?: "admin" | "con
               <b>先创建专属中转站，再签发 API Key</b>
               <p>{adminMode ? "当前还没有可签发 Key 的平台网关。" : "普通用户的 Key 只能绑定自己的专属中转站，不能直接调用平台公开监控通道或系统 API Key。"}</p>
             </div>
-            <a className="btn btn-primary btn-sm" href={adminMode ? "/admin/gateways" : "/console/gateways"}>去创建中转站</a>
+            <a className="btn btn-primary btn-sm" href={adminMode ? adminPath("/gateways") : "/console/gateways"}>去创建中转站</a>
           </div>
         ) : null}
         <div className="settings-grid-inline">
@@ -699,7 +700,7 @@ function UsersTable({ members, loading, adminMode }: { members: GatewayMember[];
     { accessorKey: "requestsToday", header: "今日网关请求", meta: { className: "mono" } },
     { id: "lastActive", header: "最近活跃", meta: { className: "muted-time" }, cell: ({ row }) => timeLabel(row.original.lastActiveAt) },
     { id: "status", header: "状态", cell: ({ row }) => <span className={`badge ${row.original.status === "active" ? "b-green" : "b-gray"} dot`}>{row.original.status === "active" ? "活跃" : "休眠"}</span> },
-    { id: "actions", header: "", cell: ({ row }) => adminMode ? <a className="row-act" href={`/admin/users?q=${encodeURIComponent(row.original.email)}`}>查看</a> : <span className="muted-time">-</span> }
+    { id: "actions", header: "", cell: ({ row }) => adminMode ? <a className="row-act" href={adminPath(`/users?q=${encodeURIComponent(row.original.email)}`)}>查看</a> : <span className="muted-time">-</span> }
   ], [adminMode]);
 
   return <DataTable data={members} columns={columns} loading={loading} pageSize={10} loadingText="正在加载用户..." footerNote="注册用户不能读取网关 Key，只有管理员可签发和吊销。" empty="暂无普通注册用户。" />;

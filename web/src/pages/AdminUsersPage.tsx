@@ -13,6 +13,7 @@ import {
   updateAdminUser,
   updateAdminUserStatus
 } from "../lib/api";
+import { adminPath } from "../lib/adminPath";
 import { BulkActionBar, DataTable, DataTableColumn, FilterBar, PageHeader, SelectField, StatGrid } from "../ui";
 
 type UserDraft = Required<Omit<AdminUserInput, "password">> & { password: string };
@@ -257,7 +258,7 @@ export function AdminUsersPage() {
         actions={(
           <>
             <button className="btn btn-ghost btn-sm" onClick={() => void load()} disabled={loading}>{t("common:actions.refresh")}</button>
-            <Link className="btn btn-primary btn-sm" to="/admin/users/new">{t("admin:users.add")}</Link>
+            <Link className="btn btn-primary btn-sm" to={adminPath("/users/new")}>{t("admin:users.add")}</Link>
           </>
         )}
       />

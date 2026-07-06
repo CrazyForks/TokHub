@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { siteConfig, type SiteConfig } from "../lib/api";
+import { isCurrentAdminPath, isLegacyAdminPath } from "../lib/adminPath";
 import { defaultFooterPublicLinks, normalizeLegacyPublicLinks } from "../lib/publicLinks";
 
 export function Footer({ admin = false, hidePlatformAdmin = !admin }: { admin?: boolean; hidePlatformAdmin?: boolean }) {
@@ -42,5 +43,6 @@ export function Footer({ admin = false, hidePlatformAdmin = !admin }: { admin?: 
 
 function isPlatformAdminHref(href: string) {
   const value = href.trim();
-  return value === "/admin" || value.startsWith("/admin/") || value.startsWith("/admin?") || value.startsWith("/admin#");
+  const pathname = value.split(/[?#]/)[0] || value;
+  return isCurrentAdminPath(pathname) || isLegacyAdminPath(pathname);
 }

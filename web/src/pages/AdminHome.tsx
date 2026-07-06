@@ -2,6 +2,7 @@ import type { CSSProperties } from "react";
 import { useEffect, useMemo, useState } from "react";
 import { AdminShell } from "../components/AdminShell";
 import { GovernanceSummary, ProductionHealth, governanceSummary, productionHealth, publicOverview, PublicOverview } from "../lib/api";
+import { adminPath } from "../lib/adminPath";
 import { Pagination } from "../ui";
 
 const HEALTH_PAGE_SIZE = 10;
@@ -156,7 +157,7 @@ export function AdminHome() {
         <div className="card card-pad">
           <div className="module-title">治理入口</div>
           <div className="module-sub">用量、告警、审计和 incident 已进入统一后台</div>
-          <a className="btn btn-primary btn-sm" href="/admin/alerts">
+          <a className="btn btn-primary btn-sm" href={adminPath("/alerts")}>
             查看告警规则
           </a>
         </div>

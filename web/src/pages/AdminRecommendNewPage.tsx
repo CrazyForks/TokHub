@@ -8,6 +8,7 @@ import {
   RecommendPick,
   saveAdminRecommend
 } from "../lib/api";
+import { adminPath } from "../lib/adminPath";
 import { FormField, PageHeader, SelectField } from "../ui";
 
 type RecommendCreateDraft = {
@@ -116,7 +117,7 @@ export function AdminRecommendNewPage() {
         rewards: data.rewards,
         scenarios: data.scenarios
       });
-      navigate("/admin/recommend", { replace: true });
+      navigate(adminPath("/recommend"), { replace: true });
     } catch (err) {
       setError(err instanceof Error ? err.message : "保存推荐位失败");
     } finally {
@@ -130,7 +131,7 @@ export function AdminRecommendNewPage() {
         description={<p className="page-intro">为前台 /recommend 的「本周编辑精选」新增一个推荐位。先选择已公开平台通道，再填写推荐语、卖点和官方体验按钮</p>}
         actions={(
           <>
-            <Link className="btn btn-ghost btn-sm" to="/admin/recommend">返回推荐管理</Link>
+            <Link className="btn btn-ghost btn-sm" to={adminPath("/recommend")}>返回推荐管理</Link>
             <button className="btn btn-primary btn-sm" type="submit" form="admin-recommend-create-form" disabled={loading || saving || !canSubmit}>
               {saving ? "保存中..." : "保存推荐位"}
             </button>
@@ -146,7 +147,7 @@ export function AdminRecommendNewPage() {
         <div className="card card-pad empty-state">
           <h4>暂无可推荐通道</h4>
           <p>请先在平台通道中创建并公开至少一个真实通道，然后再新增推荐位。</p>
-          <Link className="btn btn-primary btn-sm" to="/admin/channels">去管理平台通道</Link>
+          <Link className="btn btn-primary btn-sm" to={adminPath("/channels")}>去管理平台通道</Link>
         </div>
       ) : (
         <div className="admin-user-create-layout recommend-create-layout">
@@ -226,7 +227,7 @@ export function AdminRecommendNewPage() {
             </section>
 
             <div className="admin-user-form-footer">
-              <Link className="btn btn-ghost btn-sm" to="/admin/recommend">取消</Link>
+              <Link className="btn btn-ghost btn-sm" to={adminPath("/recommend")}>取消</Link>
               <button className="btn btn-primary btn-sm" type="submit" disabled={saving}>{saving ? "保存中..." : "保存推荐位"}</button>
             </div>
           </form>

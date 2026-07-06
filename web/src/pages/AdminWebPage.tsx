@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { AdminShell } from "../components/AdminShell";
 import { adminWebConfig, NavItem, resetAdminWebConfig, saveAdminWebConfig, SiteConfig } from "../lib/api";
+import { normalizeAdminPath } from "../lib/adminPath";
 import { defaultFooterPublicLinks, defaultPrimaryPublicLinks, normalizeLegacyPublicLinks } from "../lib/publicLinks";
 
 export function AdminWebPage() {
@@ -265,6 +266,7 @@ function normalizeSite(site: SiteConfig): SiteConfig {
     ...site,
     navItems: normalizeLegacyPublicLinks(site.navItems?.length ? site.navItems : defaultPrimaryPublicLinks),
     footerLinks: normalizeLegacyPublicLinks(site.footerLinks?.length ? site.footerLinks : defaultFooterPublicLinks),
+    adminPath: normalizeAdminPath(site.adminPath),
     logoMark: site.logoMark || "T",
     subtitle: site.subtitle ?? "API 中转站监控",
     showRegisterCta: site.showRegisterCta ?? site.registrationOpen,

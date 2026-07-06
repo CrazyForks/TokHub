@@ -25,6 +25,7 @@ import { PricingPage } from "../pages/PricingPage";
 import { PublicHome } from "../pages/PublicHome";
 import { RecommendPage } from "../pages/RecommendPage";
 import type { AdminSettingsSummary, WorkspaceSettings } from "../lib/api";
+import { routeWithAdminPath } from "../lib/adminPath";
 
 export type ModuleScope = "public" | "admin" | "console";
 export type ModulePermission = "public" | "authenticated" | "platform-admin";
@@ -440,7 +441,7 @@ export function moduleElement(module: ModuleConfig) {
 }
 
 export function groupedNavModules(scope: "admin" | "console") {
-  const source = scope === "admin" ? adminModules : consoleModules;
+  const source = scope === "admin" ? adminModules.map((module) => ({ ...module, path: routeWithAdminPath(module.path) })) : consoleModules;
   const groups: Array<{ groupKey: string; modules: ModuleConfig[] }> = [];
   for (const module of source) {
     if (!module.showInNav || !module.navGroupKey) continue;

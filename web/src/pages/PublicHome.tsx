@@ -1492,8 +1492,10 @@ function ModelTable({ rows }: { rows: ModelRow[] }) {
                               {row.brandRows.map((brand, index) => (
                                 <tr key={`${row.key}-${brand.key}`}>
                                   <td>
-                                    <span className="rank-pill">{index + 1}</span>
-                                    <strong>{brand.name}</strong>
+                                    <span className="core-brand-name">
+                                      <span className="rank-pill">{index + 1}</span>
+                                      <strong>{brand.name}</strong>
+                                    </span>
                                   </td>
                                   <td><StatusBadge status={brand.status} label={brand.statusLabel} /></td>
                                   <td><LayerPair a={brand.l1Status} b={brand.l2Status} aMs={brand.l1LatencyMs} bMs={brand.l2LatencyMs} /></td>

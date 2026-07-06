@@ -4404,10 +4404,6 @@ body:has(.admin-login-wrap) {
   margin-left: auto;
 }
 
-.admin-private-table {
-  min-width: 980px;
-}
-
 .dashboard-private-table {
   width: 100%;
   min-width: 0;
@@ -4431,23 +4427,23 @@ body:has(.admin-login-wrap) {
 
 .admin-private-table {
   width: 100%;
-  min-width: 0;
+  min-width: 980px;
   table-layout: fixed;
 }
 
-.admin-private-table th:nth-child(1) { width: 32%; }
-.admin-private-table th:nth-child(2) { width: 28%; }
-.admin-private-table th:nth-child(3) { width: 20%; }
-.admin-private-table th:nth-child(4) { width: 14%; }
+.admin-private-table th:nth-child(1) { width: 36%; }
+.admin-private-table th:nth-child(2) { width: 23%; }
+.admin-private-table th:nth-child(3) { width: 23%; }
+.admin-private-table th:nth-child(4) { width: 12%; }
 .admin-private-table th:nth-child(5) { width: 6%; }
 
 .admin-private-table th,
 .admin-private-table td {
-  padding-left: 8px;
-  padding-right: 8px;
-  vertical-align: middle;
-  overflow: visible;
+  padding: 16px 14px;
+  vertical-align: top;
+  overflow: hidden;
   text-overflow: clip;
+  white-space: normal;
 }
 
 .dashboard-private-table .prov .meta,
@@ -4573,7 +4569,9 @@ body:has(.admin-login-wrap) {
 
 .admin-private-table .private-channel-cell {
   min-width: 0;
+  max-width: 100%;
   gap: 9px;
+  align-items: flex-start;
 }
 
 .admin-private-table .private-channel-cell .mark {
@@ -4583,25 +4581,37 @@ body:has(.admin-login-wrap) {
 }
 
 .admin-private-table .private-channel-cell b,
-.admin-private-table .private-channel-cell small,
-.admin-private-table .private-owner-cell,
 .admin-private-table .private-model {
   max-width: 100%;
-  white-space: normal;
-  overflow: visible;
-  text-overflow: clip;
+  overflow: hidden;
   overflow-wrap: anywhere;
   word-break: break-word;
 }
 
 .admin-private-table .private-channel-cell b {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
   line-height: 1.28;
 }
 
 .admin-private-table .private-channel-cell small,
-.admin-private-table .private-model,
 .admin-private-table .private-probe-cell small {
   display: block;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text-3);
+  font-family: var(--mono);
+  font-size: 11.5px;
+  line-height: 1.35;
+}
+
+.admin-private-table .private-model {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
   color: var(--text-3);
   font-family: var(--mono);
   font-size: 11.5px;
@@ -4609,9 +4619,20 @@ body:has(.admin-login-wrap) {
 }
 
 .admin-private-table .private-owner-cell {
+  display: block;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   font-family: var(--mono);
   font-size: 12.5px;
   line-height: 1.35;
+}
+
+.admin-private-table .private-owner-column,
+.admin-private-table .private-status-model-column,
+.admin-private-table .private-probe-column {
+  min-width: 0;
 }
 
 .private-stack {

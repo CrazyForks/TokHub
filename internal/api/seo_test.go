@@ -55,6 +55,28 @@ func TestPricingSEOHasDedicatedMetadata(t *testing.T) {
 	}
 }
 
+func TestAdminSEOPathDetectionHonorsCustomAdminPath(t *testing.T) {
+	site := store.SiteConfig{AdminPath: "/ops-admin"}
+	cases := map[string]bool{
+		"/admin":                true,
+		"/admin/settings":       true,
+		"/ops-admin":            true,
+		"/ops-admin/settings":   true,
+		"/ops-administer":       false,
+		"/console":              false,
+		"/dashboard":            false,
+		"/api/admin/settings":   false,
+		"/assets/index.js":      false,
+		"/manifest.webmanifest": false,
+	}
+
+	for path, want := range cases {
+		if got := isAdminPagePath(path, site); got != want {
+			t.Fatalf("isAdminPagePath(%q) = %v, want %v", path, got, want)
+		}
+	}
+}
+
 func TestPublicPagesExposeStaticModuleOutlines(t *testing.T) {
 	server := &Server{cfg: Config{PublicURL: "https://tokhub.example"}}
 	index := `<html><head><title>TokHub</title></head><body><div id="root"></div></body></html>`

@@ -2307,17 +2307,25 @@ test("admin web settings, system settings and audit filters are governable", asy
     expect(reset.payload.site.defaultGatewayPolicy).toBe("cost");
     expect(reset.payload.site.timezone).toBe("America/Los_Angeles");
 
+    const invalidAdminPath = await writeJSON(page, "/api/admin/settings", "PATCH", {
+      adminPath: "/api/admin-ui"
+    });
+    expect(invalidAdminPath.status).toBe(400);
+
+    const customAdminPath = `/ops-admin-${suffix}`;
     const savedSettings = await writeJSON(page, "/api/admin/settings", "PATCH", {
       brandName: `TokHub Settings ${suffix}`,
     logoMark: "TS",
     subtitle: "设置页保存验证",
     footerText: `Settings Footer ${suffix}`,
+    adminPath: customAdminPath,
     showRegisterCta: false,
     defaultGatewayPolicy: "success",
     timezone: "UTC"
   });
   expect(savedSettings.ok).toBeTruthy();
   expect(savedSettings.payload.site.brandName).toBe(`TokHub Settings ${suffix}`);
+	  expect(savedSettings.payload.site.adminPath).toBe(customAdminPath);
 	  expect(savedSettings.payload.site.showRegisterCta).toBeFalsy();
 	  expect(savedSettings.payload.site.defaultGatewayPolicy).toBe("success");
 	  expect(savedSettings.payload.site.timezone).toBe("UTC");
@@ -2350,6 +2358,7 @@ test("admin web settings, system settings and audit filters are governable", asy
 
   const settingsSummary = await readJSON(page, "/api/admin/settings");
   expect(settingsSummary.ok).toBeTruthy();
+  expect(settingsSummary.payload.site.adminPath).toBe(customAdminPath);
   expect(settingsSummary.payload.site.defaultGatewayPolicy).toBe("success");
   expect(settingsSummary.payload.site.timezone).toBe("UTC");
   expect(typeof settingsSummary.payload.summary.activeSessions).toBe("number");
@@ -2366,13 +2375,15 @@ test("admin web settings, system settings and audit filters are governable", asy
   expect(typeof settingsSummary.payload.summary.recommendPicks).toBe("number");
 
   await page.goto("/admin/settings");
+  await page.waitForURL((url) => url.pathname === `${customAdminPath}/settings`);
   await expect(page.getByRole("button", { name: "恢复品牌默认" })).toBeVisible();
   await expect(page.getByRole("link", { name: "进入用户管理" })).toBeVisible();
   await expect(page.locator("body")).toContainText(platformOrgName);
   await expect(page.locator("body")).toContainText(platformOrgSlug);
-  await expect(page.getByRole("link", { name: "编辑组织资料" })).toHaveAttribute("href", `/admin/orgs?q=${platformOrgSlug}`);
+  await expect(page.getByLabel("后台管理员地址")).toHaveValue(customAdminPath);
+  await expect(page.getByRole("link", { name: "编辑组织资料" })).toHaveAttribute("href", `${customAdminPath}/orgs?q=${platformOrgSlug}`);
   await expect(page.locator(".org-pick")).toContainText(platformOrgName);
-  await expect(page.locator(".org-pick")).toHaveAttribute("href", `/admin/orgs?q=${platformOrgSlug}`);
+  await expect(page.locator(".org-pick")).toHaveAttribute("href", `${customAdminPath}/orgs?q=${platformOrgSlug}`);
   await expect(page.locator(".sb-link").filter({ hasText: "平台通道" }).locator(".mini")).toHaveText(sidebarCountLabel(settingsSummary.payload.summary.platformChannels));
   await expect(page.locator(".sb-link").filter({ hasText: "用户管理" }).locator(".mini")).toHaveText(sidebarCountLabel(settingsSummary.payload.summary.users));
   await expect(page.locator(".sb-link").filter({ hasText: "组织管理" }).locator(".mini")).toHaveText(sidebarCountLabel(settingsSummary.payload.summary.orgs));
@@ -2384,6 +2395,7 @@ test("admin web settings, system settings and audit filters are governable", asy
   await page.getByRole("button", { name: "保存更改" }).click();
   await expect(page.locator("body")).toContainText("设置已保存");
   const uiSavedSettings = await readJSON(page, "/api/admin/settings");
+  expect(uiSavedSettings.payload.site.adminPath).toBe(customAdminPath);
   expect(uiSavedSettings.payload.site.defaultGatewayPolicy).toBe("cost");
   expect(uiSavedSettings.payload.site.timezone).toBe("America/Los_Angeles");
   await page.getByRole("button", { name: "计费" }).click();

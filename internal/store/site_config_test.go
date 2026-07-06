@@ -32,6 +32,28 @@ func TestDefaultSiteConfigStillProvidesOptionalTextDefaults(t *testing.T) {
 	if cfg.FooterText == "" {
 		t.Fatal("expected default site config to include footer text")
 	}
+	if cfg.AdminPath != "/admin" {
+		t.Fatalf("expected default admin path /admin, got %q", cfg.AdminPath)
+	}
+}
+
+func TestNormalizeSiteConfigAdminPath(t *testing.T) {
+	cfg := normalizeSiteConfig(SiteConfig{
+		RegistrationOpen: true,
+		ShowRegisterCTA:  true,
+		AdminPath:        "/ops-admin/",
+		FooterLinks: []NavItem{
+			{Label: "平台管理", Href: "/admin"},
+			{Label: "后台设置", Href: "/admin/settings"},
+		},
+	})
+
+	if cfg.AdminPath != "/ops-admin" {
+		t.Fatalf("expected trailing slash to be trimmed, got %q", cfg.AdminPath)
+	}
+	if cfg.FooterLinks[0].Href != "/ops-admin" || cfg.FooterLinks[1].Href != "/ops-admin/settings" {
+		t.Fatalf("expected legacy admin footer links to follow admin path, got %#v", cfg.FooterLinks)
+	}
 }
 
 func TestDefaultSiteConfigPublicNavUsesThreePrimaryPages(t *testing.T) {

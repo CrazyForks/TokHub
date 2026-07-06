@@ -30,6 +30,7 @@ import {
   updateNotificationChannel,
   workspaceCanOperate
 } from "../lib/api";
+import { adminPath } from "../lib/adminPath";
 import { BulkActionBar, Button, DataTable, DataTableColumn, FilterBar, Pagination, SelectField, StatGrid, StatusBadge } from "../ui";
 
 type Scope = "admin" | "console";
@@ -936,7 +937,7 @@ export function AlertsPage({ scope = "admin" }: { scope?: Scope }) {
             <div className="form-help">
               {incidentChannelOptions.length
                 ? "Incident 会绑定到选中的通道，后续可在列表里按通道筛选。"
-                : <><span>当前没有可选通道。</span><a href={scope === "console" ? "/console/channels" : "/admin/channels"}>去添加通道</a></>}
+                : <><span>当前没有可选通道。</span><a href={scope === "console" ? "/console/channels" : adminPath("/channels")}>去添加通道</a></>}
             </div>
           </div>
           <div className="field">

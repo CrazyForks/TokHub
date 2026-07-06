@@ -12,6 +12,7 @@ import {
   type RecommendPick,
   type User
 } from "../lib/api";
+import { adminPath } from "../lib/adminPath";
 
 const statusClass: Record<string, string> = {
   healthy: "b-green",
@@ -106,7 +107,7 @@ export function HomePage() {
                 我的工作区
               </a>
               {isPlatformAdmin ? (
-                <a className="btn btn-ghost" href="/admin">
+                <a className="btn btn-ghost" href={adminPath()}>
                   平台管理
                 </a>
               ) : null}
@@ -201,7 +202,7 @@ export function HomePage() {
               eyebrow="平台运营"
               title="平台管理"
               text="管理平台通道、推荐配置、开放 API、用户组织、用量、告警和审计，保持运营与治理分层。"
-              href="/admin"
+              href={adminPath()}
               cta="进入后台"
               meta="Owner/Admin"
             />

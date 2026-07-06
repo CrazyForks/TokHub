@@ -1,5 +1,6 @@
 import { FormEvent, useEffect, useState } from "react";
 import { currentUser, login, logout, User } from "../lib/api";
+import { safeAdminNextPath } from "../lib/adminPath";
 
 function isPlatformRole(user: User | null) {
   return user?.role === "owner" || user?.role === "admin";
@@ -189,39 +190,5 @@ export function AdminLoginPage() {
         </div>
       </section>
     </main>
-  );
-}
-
-function safeAdminNextPath(rawNext: string | null) {
-  const fallback = "/admin";
-  if (!rawNext || !rawNext.startsWith("/") || rawNext.startsWith("//") || rawNext.startsWith("\\")) {
-    return fallback;
-  }
-  try {
-    const next = new URL(rawNext, window.location.origin);
-    if (
-      next.origin !== window.location.origin ||
-      next.pathname === "/admin/login" ||
-      next.pathname === "/login" ||
-      !next.pathname.startsWith("/admin") ||
-      isNonPageNextPath(next.pathname)
-    ) {
-      return fallback;
-    }
-    return `${next.pathname}${next.search}${next.hash}`;
-  } catch {
-    return fallback;
-  }
-}
-
-function isNonPageNextPath(pathname: string) {
-  return (
-    pathname.startsWith("/api/") ||
-    pathname.startsWith("/gateway/") ||
-    pathname.startsWith("/v1/") ||
-    pathname.startsWith("/ws/") ||
-    pathname === "/metrics" ||
-    pathname === "/healthz" ||
-    pathname === "/readyz"
   );
 }

@@ -10,6 +10,7 @@ type adminSettingsRequest struct {
 	RegistrationOpen          *bool                       `json:"registrationOpen"`
 	ShowRegisterCTA           *bool                       `json:"showRegisterCta"`
 	EmailVerificationRequired *bool                       `json:"emailVerificationRequired"`
+	AdminPath                 *string                     `json:"adminPath"`
 	BrandName                 *string                     `json:"brandName"`
 	LogoMark                  *string                     `json:"logoMark"`
 	Subtitle                  *string                     `json:"subtitle"`
@@ -58,6 +59,9 @@ func (s *Server) updateAdminSettings(w http.ResponseWriter, r *http.Request) {
 	if req.EmailVerificationRequired != nil {
 		cfg.EmailVerificationRequired = *req.EmailVerificationRequired
 	}
+	if req.AdminPath != nil {
+		cfg.AdminPath = *req.AdminPath
+	}
 	if req.BrandName != nil {
 		cfg.BrandName = *req.BrandName
 	}
@@ -104,7 +108,7 @@ func (s *Server) updateAdminSettings(w http.ResponseWriter, r *http.Request) {
 		ObjectID:   "site",
 		IP:         clientIP(r),
 		Result:     "success",
-		Metadata:   map[string]any{"registration_open": cfg.RegistrationOpen, "email_verification_required": cfg.EmailVerificationRequired, "default_gateway_policy": cfg.DefaultGatewayPolicy, "timezone": cfg.Timezone},
+		Metadata:   map[string]any{"registration_open": cfg.RegistrationOpen, "email_verification_required": cfg.EmailVerificationRequired, "admin_path": cfg.AdminPath, "default_gateway_policy": cfg.DefaultGatewayPolicy, "timezone": cfg.Timezone},
 	})
 	writeJSON(w, http.StatusOK, map[string]any{"site": cfg})
 }

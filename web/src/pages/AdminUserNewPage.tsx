@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { AdminShell } from "../components/AdminShell";
 import { AdminUserInput, createAdminUser } from "../lib/api";
+import { adminPath } from "../lib/adminPath";
 import { FormField, PageHeader, SelectField } from "../ui";
 
 type UserCreateDraft = {
@@ -71,7 +72,7 @@ export function AdminUserNewPage() {
         dataOrigin: "runtime"
       };
       const payload = await createAdminUser(input);
-      navigate(`/admin/users?q=${encodeURIComponent(payload.user.email)}`, { replace: true });
+      navigate(adminPath(`/users?q=${encodeURIComponent(payload.user.email)}`), { replace: true });
     } catch (err) {
       setError(err instanceof Error ? err.message : "创建用户失败");
     } finally {
@@ -89,7 +90,7 @@ export function AdminUserNewPage() {
         )}
         actions={(
           <>
-            <Link className="btn btn-ghost btn-sm" to="/admin/users">返回用户列表</Link>
+            <Link className="btn btn-ghost btn-sm" to={adminPath("/users")}>返回用户列表</Link>
             <button className="btn btn-primary btn-sm" type="submit" form="admin-user-create-form" disabled={saving}>
               {saving ? "保存中..." : "创建用户"}
             </button>
@@ -180,7 +181,7 @@ export function AdminUserNewPage() {
           </section>
 
           <div className="admin-user-form-footer">
-            <Link className="btn btn-ghost btn-sm" to="/admin/users">取消</Link>
+            <Link className="btn btn-ghost btn-sm" to={adminPath("/users")}>取消</Link>
             <button className="btn btn-primary btn-sm" type="submit" disabled={saving}>{saving ? "保存中..." : "创建用户"}</button>
           </div>
         </form>

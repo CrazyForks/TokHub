@@ -140,7 +140,7 @@ func (s *Server) seoForRequest(r *http.Request) seoPage {
 	case strings.HasPrefix(pagePath, "/channels/"):
 		channelID := strings.TrimPrefix(pagePath, "/channels/")
 		return s.channelSEO(r, site, baseURL, canonical, channelID)
-	case strings.HasPrefix(pagePath, "/admin") || strings.HasPrefix(pagePath, "/console") || pagePath == "/login":
+	case isAdminPagePath(pagePath, site) || strings.HasPrefix(pagePath, "/console") || pagePath == "/login":
 		return seoPage{
 			Title:       site.BrandName + " 控制台",
 			Description: site.BrandName + " 用户和管理员控制台入口。",
@@ -156,6 +156,14 @@ func (s *Server) seoForRequest(r *http.Request) seoPage {
 			JSONLD:      []any{s.webSiteJSONLD(site, baseURL)},
 		}
 	}
+}
+
+func isAdminPagePath(pagePath string, site store.SiteConfig) bool {
+	adminPath := store.NormalizeAdminPath(site.AdminPath)
+	return pagePath == adminPath ||
+		strings.HasPrefix(pagePath, adminPath+"/") ||
+		pagePath == "/admin" ||
+		strings.HasPrefix(pagePath, "/admin/")
 }
 
 func (s *Server) homeSEO(r *http.Request, site store.SiteConfig, baseURL string, canonical string) seoPage {
@@ -727,7 +735,11 @@ func (s *Server) robotsTxt(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Cache-Control", "public, max-age=300")
 	fmt.Fprintf(w, "User-agent: *\n")
 	fmt.Fprintf(w, "Allow: /\n")
-	fmt.Fprintf(w, "Disallow: /admin\n")
+	adminPath := store.NormalizeAdminPath(site.AdminPath)
+	fmt.Fprintf(w, "Disallow: %s\n", adminPath)
+	if adminPath != "/admin" {
+		fmt.Fprintf(w, "Disallow: /admin\n")
+	}
 	fmt.Fprintf(w, "Disallow: /console\n")
 	fmt.Fprintf(w, "Disallow: /api/auth\n")
 	fmt.Fprintf(w, "Disallow: /api/me\n")
