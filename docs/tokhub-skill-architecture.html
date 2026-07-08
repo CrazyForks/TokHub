@@ -348,7 +348,7 @@
         <span class="pill">版本：0.1.0</span>
         <span class="pill">日期：2026-07-08</span>
         <span class="pill">主入口：agent-skills/tokhub</span>
-        <span class="pill">兼容入口：agent-skills/tokhub-admin</span>
+        <span class="pill">旧名兼容：tokhub 内部处理</span>
       </div>
     </header>
 
@@ -439,9 +439,9 @@
             <td>列出 admin-agent 分支下的后台操作、scope、risk 和 guard 要求。</td>
           </tr>
           <tr>
-            <td>兼容入口</td>
-            <td><code>agent-skills/tokhub-admin</code></td>
-            <td>保留旧 skill 名称，脚本只转发到 <code>tokhub.mjs admin-agent</code>。</td>
+            <td>旧名兼容</td>
+            <td><code>agent-skills/tokhub</code></td>
+            <td>仓库只发布一个 skill。旧 <code>tokhub-admin</code> 名称由 <code>tokhub</code> 的触发边界和 admin-agent 分支承接。</td>
           </tr>
         </tbody>
       </table>
@@ -635,10 +635,10 @@ node agent-skills/tokhub/scripts/tokhub.mjs admin-agent preflight</code></pre>
     </section>
 
     <section>
-      <h2>8. 旧 tokhub-admin 的保留方式</h2>
-      <p><code>tokhub-admin</code> 现在是兼容入口，不再作为主 skill 演进。它的说明文件会引导用户优先使用 <code>tokhub</code>。旧脚本 <code>tokhub-admin.mjs</code> 也不再保留独立实现，只是把参数转发到：</p>
+      <h2>8. 旧 tokhub-admin 的下线方式</h2>
+      <p><code>tokhub-admin</code> 不再作为独立 skill 包发布，仓库只保留 <code>tokhub</code> 一个 skill。系统兼容旧名称时，会把它路由到 <code>tokhub</code> 的 admin-agent 分支。</p>
       <pre><code>node agent-skills/tokhub/scripts/tokhub.mjs admin-agent COMMAND</code></pre>
-      <p>这样可以避免两套客户端逻辑长期分叉，也能让旧用户继续使用原来的入口名。</p>
+      <p>这样可以避免两个 skill 目录和两套客户端逻辑长期分叉，同时让老用户的任务语义继续被新入口接住。</p>
     </section>
 
     <section>
