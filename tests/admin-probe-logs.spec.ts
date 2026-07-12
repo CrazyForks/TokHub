@@ -25,7 +25,7 @@ test("admin can diagnose an upstream authorization failure from probe logs", asy
         finishedAt: "2026-07-12T02:00:00.238Z",
         steps: [{
           step: "generate", status: "auth_error", latencyMs: 238, httpStatus: 401, errorType: "auth_error",
-          metadata: { upstream_error_summary: "code=ip_not_allowed · message=source IP 47.251.246.63 is denied" },
+          metadata: { upstream_error_summary: "code=ip_not_allowed · type=auth_error" },
           createdAt: "2026-07-12T02:00:00Z"
         }]
       })
@@ -86,6 +86,6 @@ test("admin can diagnose an upstream authorization failure from probe logs", asy
   const detailBounds = await detailHeading.boundingBox();
   const viewport = page.viewportSize();
   expect(detailBounds && viewport && detailBounds.x < viewport.width && detailBounds.y < viewport.height).toBeTruthy();
-  await expect(page.getByText("source IP 47.251.246.63 is denied", { exact: false })).toBeVisible();
+  await expect(page.getByText("code=ip_not_allowed · type=auth_error")).toBeVisible();
   await expect(page.getByText("认证信息或来源授权未通过")).toBeVisible();
 });

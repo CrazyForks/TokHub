@@ -86,11 +86,11 @@ const probeLogBaseSQL = `
 	with base as (
 		select
 			pr.id,pr.channel_id,
-			coalesce(nullif(pr.metadata->>'channel_name',''),c.name) as channel_name,
-			coalesce(nullif(pr.metadata->>'provider',''),c.provider) as provider,
-			coalesce(nullif(pr.metadata->>'type',''),c.type) as type,
-			coalesce(nullif(pr.metadata->>'model',''),c.model) as model,
-			coalesce(nullif(pr.metadata->>'endpoint',''),c.endpoint) as endpoint,
+			case when pr.metadata ? 'channel_name' then pr.metadata->>'channel_name' else c.name end as channel_name,
+			case when pr.metadata ? 'provider' then pr.metadata->>'provider' else c.provider end as provider,
+			case when pr.metadata ? 'type' then pr.metadata->>'type' else c.type end as type,
+			case when pr.metadata ? 'model' then pr.metadata->>'model' else c.model end as model,
+			case when pr.metadata ? 'endpoint' then pr.metadata->>'endpoint' else c.endpoint end as endpoint,
 			pr.layer,pr.source,pr.status as run_status,
 			case
 				when pr.status='running' and pr.started_at < now() - interval '10 minutes' then 'failed'

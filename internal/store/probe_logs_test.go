@@ -49,3 +49,12 @@ func TestProbeLogQueryPreservesHistoricalIdentityAndClassifiesStaleRuns(t *testi
 		t.Fatal("soft-deleted channels must retain their historical probe logs")
 	}
 }
+
+func TestProbeLogQueryKeepsIntentionallyEmptySnapshotFields(t *testing.T) {
+	for _, snapshotField := range []string{"channel_name", "provider", "type", "model", "endpoint"} {
+		expected := "case when pr.metadata ? '" + snapshotField + "' then pr.metadata->>'" + snapshotField + "' else c."
+		if !strings.Contains(probeLogBaseSQL, expected) {
+			t.Fatalf("probe log query does not distinguish an empty %s snapshot from a legacy row", snapshotField)
+		}
+	}
+}

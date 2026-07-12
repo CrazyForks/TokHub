@@ -92,8 +92,8 @@ func TestExecutorL2CapturesSanitizedUpstreamErrorSummary(t *testing.T) {
 		t.Fatalf("result=%+v, want auth_error/401", result)
 	}
 	summary, _ := result.Metadata["upstream_error_summary"].(string)
-	if !strings.Contains(summary, "source IP 47.251.246.63 is denied") || !strings.Contains(summary, "ip_not_allowed") {
-		t.Fatalf("summary=%q, want diagnostic message and error code", summary)
+	if summary != "code=ip_not_allowed · type=auth_error" {
+		t.Fatalf("summary=%q, want structured diagnostic fields only", summary)
 	}
 	for _, secret := range []string{"sk-upstream-secret", "jwt-secret-value", "bearer-secret", "basic-secret", "sk-request-secret", "eyJhbGciOiJIUzI1NiJ9", "AIzaSyD1234567890abcdefghijklmnopqrstuvwxyz"} {
 		if strings.Contains(summary, secret) {
@@ -107,8 +107,18 @@ func TestUpstreamErrorSummaryRedactsQuotedAuthorizationValues(t *testing.T) {
 	if strings.Contains(summary, "cXVvdGVkLXNlY3JldA==") {
 		t.Fatalf("summary leaked quoted authorization secret: %q", summary)
 	}
-	if !strings.Contains(summary, "Authorization: [redacted]") {
-		t.Fatalf("summary=%q, want redacted authorization marker", summary)
+	if summary != "" {
+		t.Fatalf("summary=%q, want free-form message omitted", summary)
+	}
+}
+
+func TestUpstreamErrorSummaryDropsFreeFormMessages(t *testing.T) {
+	summary := upstreamErrorSummary([]byte(`{"error":{"code":"request_denied","type":"auth_error","message":"credential=unrecognised-secret"}}`))
+	if strings.Contains(summary, "unrecognised-secret") || strings.Contains(summary, "credential=") {
+		t.Fatalf("summary leaked free-form upstream message: %q", summary)
+	}
+	if summary != "code=request_denied · type=auth_error" {
+		t.Fatalf("summary=%q, want structured diagnostic fields only", summary)
 	}
 }
 
@@ -388,8 +398,8 @@ func TestExecutorL3CapturesSanitizedUpstreamErrorSummary(t *testing.T) {
 		t.Fatalf("result=%+v, want auth_error/403", result)
 	}
 	summary, _ := result.Metadata["upstream_error_summary"].(string)
-	if !strings.Contains(summary, "Alibaba US egress is not allowed") || strings.Contains(summary, "sk-response-secret") {
-		t.Fatalf("summary=%q, want sanitized region diagnostic", summary)
+	if summary != "code=region_denied" || strings.Contains(summary, "sk-response-secret") {
+		t.Fatalf("summary=%q, want structured region diagnostic", summary)
 	}
 }
 

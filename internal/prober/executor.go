@@ -660,7 +660,7 @@ func upstreamErrorSummary(payload []byte) string {
 	}
 	fields := make([]string, 0, 3)
 	appendFields := func(values map[string]any) {
-		for _, key := range []string{"code", "type", "message"} {
+		for _, key := range []string{"code", "type"} {
 			value, ok := values[key].(string)
 			value = strings.TrimSpace(value)
 			if ok && value != "" {
