@@ -142,7 +142,7 @@ export function PublicHome() {
   const [privateItems, setPrivateItems] = useState<PrivateChannel[]>([]);
   const [privateCount, setPrivateCount] = useState(0);
   const [coreMonitorModels, setCoreMonitorModels] = useState<CoreMonitorModel[]>(DEFAULT_CORE_MONITOR_MODELS);
-  const [selectedChannel, setSelectedChannel] = useState<PublicChannel | null>(null);
+  const [selectedBrandKey, setSelectedBrandKey] = useState("");
   const [authOpen, setAuthOpen] = useState(false);
   const [pendingAction, setPendingAction] = useState<PendingPublicAction | null>(null);
   const [privateFormOpen, setPrivateFormOpen] = useState(false);
@@ -404,10 +404,15 @@ export function PublicHome() {
   );
   const filteredChannels = useMemo(() => filterChannels(channels, boardFilter), [channels, boardFilter]);
   const brandChannels = useMemo(() => buildBrandRows(filteredChannels, coreMonitorModels), [filteredChannels, coreMonitorModels]);
+  const allBrandChannels = useMemo(() => buildBrandRows(channels, coreMonitorModels), [channels, coreMonitorModels]);
   const modelRows = useMemo(() => buildModelRows(filteredChannels, coreMonitorModels), [filteredChannels, coreMonitorModels]);
   const filteredFavorites = useMemo(() => filterChannels(rangedFavoriteItems, boardFilter), [rangedFavoriteItems, boardFilter]);
   const brandFavorites = useMemo(() => buildBrandRows(filteredFavorites, coreMonitorModels), [filteredFavorites, coreMonitorModels]);
   const filteredPrivate = useMemo(() => filterChannels(privateItems, boardFilter), [privateItems, boardFilter]);
+  const selectedChannel = useMemo(
+    () => allBrandChannels.find((item) => item.key === selectedBrandKey)?.primaryChannel ?? null,
+    [allBrandChannels, selectedBrandKey]
+  );
   const visiblePublicRange = publicDataRange || range;
   const initialPublicLoading = loading && !publicDataRange;
   const refreshingPublic = loading && Boolean(publicDataRange);
@@ -556,7 +561,7 @@ export function PublicHome() {
 
         <div className={`card board public-board ${refreshingPublic && activeBoardTab !== "private" ? "is-refreshing" : ""}`} aria-busy={refreshingPublic && activeBoardTab !== "private"}>
           {activeBoardTab === "all" && initialPublicLoading ? <div className="empty-state"><div className="ico">⌁</div><h4>正在加载通道数据</h4><p>公开看板正在读取 `/api/public/*`。</p></div> : null}
-          {activeBoardTab === "all" && !initialPublicLoading && dimension === "brand" ? <BrandTable channels={brandChannels} favorites={favoriteIDs} range={visiblePublicRange} onToggleFavorite={(id) => void toggleFavorite(id)} onOpenChannel={setSelectedChannel} /> : null}
+          {activeBoardTab === "all" && !initialPublicLoading && dimension === "brand" ? <BrandTable channels={brandChannels} favorites={favoriteIDs} range={visiblePublicRange} onToggleFavorite={(id) => void toggleFavorite(id)} onOpenBrand={(brand) => setSelectedBrandKey(brand.key)} /> : null}
           {activeBoardTab === "all" && !initialPublicLoading && dimension === "model" ? <ModelTable rows={modelRows} range={visiblePublicRange} /> : null}
           {activeBoardTab === "favorites" ? (
             <PublicFavoritePanel
@@ -566,7 +571,7 @@ export function PublicHome() {
               favorites={favoriteIDs}
               range={visiblePublicRange}
               onToggleFavorite={(id) => void toggleFavorite(id)}
-              onOpenChannel={setSelectedChannel}
+              onOpenBrand={(brand) => setSelectedBrandKey(brand.key)}
               onExplore={() => switchBoardTab("all")}
             />
           ) : null}
@@ -613,7 +618,7 @@ export function PublicHome() {
           </div>
         </div>
       </main>
-      <ChannelPreviewDialog channel={selectedChannel} range={visiblePublicRange} isFavorite={selectedChannel ? favoriteIDs.has(selectedChannel.id) : false} onToggleFavorite={(id) => void toggleFavorite(id)} onClose={() => setSelectedChannel(null)} />
+      <ChannelPreviewDialog channel={selectedChannel} range={visiblePublicRange} isFavorite={selectedChannel ? favoriteIDs.has(selectedChannel.id) : false} onToggleFavorite={(id) => void toggleFavorite(id)} onClose={() => setSelectedBrandKey("")} />
       <AuthDialog
         open={authOpen}
         onOpenChange={(open) => {
@@ -777,7 +782,7 @@ function PublicFavoritePanel({
   favorites,
   range,
   onToggleFavorite,
-  onOpenChannel,
+  onOpenBrand,
   onExplore
 }: {
   loading: boolean;
@@ -786,7 +791,7 @@ function PublicFavoritePanel({
   favorites: Set<string>;
   range: string;
   onToggleFavorite: (channelID: string) => void;
-  onOpenChannel: (channel: PublicChannel) => void;
+  onOpenBrand: (brand: BrandMonitorRow) => void;
   onExplore: () => void;
 }) {
   if (loading) {
@@ -802,7 +807,7 @@ function PublicFavoritePanel({
       </div>
     );
   }
-  return <BrandTable channels={channels} favorites={favorites} range={range} onToggleFavorite={onToggleFavorite} onOpenChannel={onOpenChannel} />;
+  return <BrandTable channels={channels} favorites={favorites} range={range} onToggleFavorite={onToggleFavorite} onOpenBrand={onOpenBrand} />;
 }
 
 function PublicPrivateChannelPanel({
@@ -903,7 +908,7 @@ function PublicPrivateChannelPanel({
   );
 }
 
-function BrandTable({ channels, favorites, range, onToggleFavorite, onOpenChannel }: { channels: BrandMonitorRow[]; favorites: Set<string>; range: string; onToggleFavorite: (channelID: string) => void; onOpenChannel: (channel: PublicChannel) => void }) {
+function BrandTable({ channels, favorites, range, onToggleFavorite, onOpenBrand }: { channels: BrandMonitorRow[]; favorites: Set<string>; range: string; onToggleFavorite: (channelID: string) => void; onOpenBrand: (brand: BrandMonitorRow) => void }) {
   if (!channels.length) {
     return <div className="empty-state"><div className="ico">⌕</div><h4>没有匹配通道</h4><p>调整服务商、状态或搜索条件后再试。</p></div>;
   }
@@ -941,7 +946,7 @@ function BrandTable({ channels, favorites, range, onToggleFavorite, onOpenChanne
           </thead>
           <tbody>
             {channels.map((ch) => (
-              <tr className="channel-click-row" key={ch.id} onClick={() => onOpenChannel(ch.primaryChannel)}>
+              <tr className="channel-click-row" key={ch.id} onClick={() => onOpenBrand(ch)}>
                 <td className="fav-col">
                   <button
                     className={`fav-btn ${ch.channels.some((item) => favorites.has(item.id)) ? "on" : ""}`}
@@ -1740,8 +1745,8 @@ function buildBrandMonitorRow(key: string, channels: PublicChannel[], models: Co
     l3LatencyMs: averageNumber(channels.map((channel) => channel.l3LatencyMs), { positiveOnly: true }),
     errorType: uniqueText(channels.map((channel) => channel.errorType)).join(" / "),
     lastProbeAt: latestProbeAt(channels),
-    trend: mergeTrend(channels),
-    trendBuckets: mergeTrendBuckets(channels)
+    trend: primaryChannel.trend,
+    trendBuckets: primaryChannel.trendBuckets ?? []
   } satisfies BrandMonitorRow;
 }
 
