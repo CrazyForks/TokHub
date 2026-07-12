@@ -17,7 +17,15 @@ func TestNormalizePublicChannelRange(t *testing.T) {
 		shouldFind string
 	}{
 		{name: "empty preserves legacy query", value: "", active: false},
-		{name: "24 hours uses hourly buckets", value: "24", active: true, hourly: true, days: 1, shouldFind: "date_trunc('hour'"},
+		{
+			name:       "24 hours uses a rolling window ending now",
+			value:      "24",
+			active:     true,
+			hourly:     true,
+			days:       1,
+			predicate:  "ss.sampled_at >= now() - interval '24 hours' and ss.sampled_at < now()",
+			shouldFind: "generate_series(now() - interval '24 hours', now() - interval '1 hour', interval '1 hour')",
+		},
 		{name: "7 days uses daily buckets", value: "7", active: true, days: 7, shouldFind: "current_date - (6 * interval '1 day')"},
 		{name: "30 days uses daily buckets", value: "30", active: true, days: 30, shouldFind: "current_date - (29 * interval '1 day')"},
 		{name: "all uses compressed all-time buckets", value: "all", active: true, all: true, predicate: "true", shouldFind: "ntile(30)"},
@@ -53,5 +61,12 @@ func TestParseTrendBucketsKeepsEmptyBuckets(t *testing.T) {
 	}
 	if got[1].Value != nil {
 		t.Fatalf("second value = %#v, want nil", got[1].Value)
+	}
+}
+
+func TestRolling24HourTrendBucketKeyKeepsMinutePrecision(t *testing.T) {
+	query := normalizePublicChannelRange("24").trendBucketsJoinSQL()
+	if !strings.Contains(query, `YYYY-MM-DD"T"HH24:MI:SS"Z"`) {
+		t.Fatalf("rolling bucket key must preserve its sub-hour start time:\n%s", query)
 	}
 }

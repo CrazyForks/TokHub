@@ -731,7 +731,7 @@ func (r publicChannelRange) snapshotPredicate(alias string) string {
 		return "true"
 	}
 	if r.hourly {
-		return fmt.Sprintf("%s.sampled_at >= date_trunc('hour', now()) - interval '23 hours' and %s.sampled_at < date_trunc('hour', now()) + interval '1 hour'", alias, alias)
+		return fmt.Sprintf("%s.sampled_at >= now() - interval '24 hours' and %s.sampled_at < now()", alias, alias)
 	}
 	lookbackDays := r.days - 1
 	if lookbackDays < 0 {
@@ -787,17 +787,19 @@ func (r publicChannelRange) trendBucketsJoinSQL() string {
 		return `
 		left join lateral (
 			with buckets as (
-				select generate_series(date_trunc('hour', now()) - interval '23 hours', date_trunc('hour', now()), interval '1 hour') as bucket_start
+				select generate_series(now() - interval '24 hours', now() - interval '1 hour', interval '1 hour') as bucket_start
 			),
 			agg as (
-				select date_trunc('hour', sampled_at) as bucket_start,avg(score) as value
-				from channel_status_snapshots
-				where channel_id=c.id and sampled_at >= date_trunc('hour', now()) - interval '23 hours' and sampled_at < date_trunc('hour', now()) + interval '1 hour'
-				group by 1
+				select b.bucket_start,avg(ss.score) as value
+				from buckets b
+				left join channel_status_snapshots ss on ss.channel_id=c.id
+					and ss.sampled_at >= b.bucket_start
+					and ss.sampled_at < b.bucket_start + interval '1 hour'
+				group by b.bucket_start
 			)
 			select jsonb_agg(jsonb_build_object(
-				'key', to_char(b.bucket_start at time zone 'UTC','YYYY-MM-DD"T"HH24:00:00"Z"'),
-				'label', to_char(b.bucket_start,'HH24:00'),
+				'key', to_char(b.bucket_start at time zone 'UTC','YYYY-MM-DD"T"HH24:MI:SS"Z"'),
+				'label', to_char(b.bucket_start,'HH24:MI'),
 				'value', case when agg.value is null then null else round(agg.value)::int end
 			) order by b.bucket_start) as trend_buckets
 			from buckets b

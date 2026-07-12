@@ -67,6 +67,8 @@ const statusOptions = [
   ["unknown", "未知"]
 ];
 
+const publicRefreshIntervalMs = 10_000;
+
 function rangeOptionLabel(range: string) {
   if (range === "24") return "近24h";
   if (range === "7") return "近7天";
@@ -168,29 +170,33 @@ export function PublicHome() {
 
   useEffect(() => {
     let active = true;
-    setLoading(true);
-    setError("");
-    Promise.all([
-      publicChannels({ page: 1, pageSize: 100, range }),
-      providerRank(range),
-      errorsSummary(range)
-    ])
-      .then(([channelList, rankList, errorList]) => {
+    async function refreshPublicData(showLoading: boolean) {
+      if (showLoading) setLoading(true);
+      setError("");
+      try {
+        const [channelList, rankList, errorList] = await Promise.all([
+          publicChannels({ page: 1, pageSize: 100, range }),
+          providerRank(range),
+          errorsSummary(range)
+        ]);
         if (!active) return;
         setChannels(channelList.items);
         setTotal(channelList.total);
         setRank(rankList.items);
         setErrors(errorList.items);
         setPublicDataRange(range);
-      })
-      .catch((err: Error) => {
-        if (active) setError(err.message);
-      })
-      .finally(() => {
-        if (active) setLoading(false);
-      });
+      } catch (err) {
+        if (active) setError(err instanceof Error ? err.message : "公开看板加载失败");
+      } finally {
+        if (active && showLoading) setLoading(false);
+      }
+    }
+
+    void refreshPublicData(true);
+    const refreshTimer = window.setInterval(() => void refreshPublicData(false), publicRefreshIntervalMs);
     return () => {
       active = false;
+      window.clearInterval(refreshTimer);
     };
   }, [range]);
 
