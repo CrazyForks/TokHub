@@ -376,9 +376,11 @@ export type ChannelDiagnosis = {
   hint?: string;
 };
 
-export function publicChannelPath(channel: Pick<PublicChannel, "id" | "publicSlug">) {
+export function publicChannelPath(channel: Pick<PublicChannel, "id" | "publicSlug">, range?: string) {
   const ref = (channel.publicSlug || channel.id || "").trim();
-  return ref ? `/channels/${encodeURIComponent(ref)}` : "/dashboard";
+  if (!ref) return "/dashboard";
+  const suffix = range ? `?range=${encodeURIComponent(range)}` : "";
+  return `/channels/${encodeURIComponent(ref)}${suffix}`;
 }
 
 export function externalHTTPHref(value?: string) {
@@ -1363,8 +1365,9 @@ export async function publicChannels(params: Record<string, string | number | un
   return readJSON<PublicChannelList>(`/api/public/channels${suffix}`);
 }
 
-export async function publicChannel(channelID: string): Promise<PublicChannelDetail> {
-  return readJSON<PublicChannelDetail>(`/api/public/channels/${encodeURIComponent(channelID)}`);
+export async function publicChannel(channelID: string, range?: string): Promise<PublicChannelDetail> {
+  const suffix = range ? `?range=${encodeURIComponent(range)}` : "";
+  return readJSON<PublicChannelDetail>(`/api/public/channels/${encodeURIComponent(channelID)}${suffix}`);
 }
 
 export async function publicChannelSeries(channelID: string, days: number): Promise<{ items: SeriesPoint[] }> {
